@@ -1,0 +1,258 @@
+{
+  "model_name": "Trajectory Transformer",
+  "model_version": "0.1.0",
+  "generated_at": "2026-09-04T04:53:03.127726+00:00",
+  "window": 8,
+  "selected_threshold": 0.15,
+  "split": "held_out_test",
+  "role": "explanation_illustration_only",
+  "statement": "Synthetic data. These attention weights illustrate a temporal explanation modality and are not used for live case scoring or shown to merchants. Live explanations come from the Logistic Regression feature contributions.",
+  "examples": [
+    {
+      "merchant_id": "merchant_demo_0387",
+      "week_start": "2024-12-09",
+      "predicted_probability": 0.8638,
+      "actual_label": 1,
+      "attention_by_week": [
+        {
+          "weeks_before_current": -7,
+          "attention": 0.1118
+        },
+        {
+          "weeks_before_current": -6,
+          "attention": 0.1531
+        },
+        {
+          "weeks_before_current": -5,
+          "attention": 0.1103
+        },
+        {
+          "weeks_before_current": -4,
+          "attention": 0.0883
+        },
+        {
+          "weeks_before_current": -3,
+          "attention": 0.0641
+        },
+        {
+          "weeks_before_current": -2,
+          "attention": 0.0631
+        },
+        {
+          "weeks_before_current": -1,
+          "attention": 0.2192
+        },
+        {
+          "weeks_before_current": 0,
+          "attention": 0.19
+        }
+      ],
+      "peak_week_offset": -1
+    },
+    {
+      "merchant_id": "merchant_demo_0431",
+      "week_start": "2024-10-21",
+      "predicted_probability": 0.8634,
+      "actual_label": 1,
+      "attention_by_week": [
+        {
+          "weeks_before_current": -7,
+          "attention": 0.0804
+        },
+        {
+          "weeks_before_current": -6,
+          "attention": 0.057
+        },
+        {
+          "weeks_before_current": -5,
+          "attention": 0.1091
+        },
+        {
+          "weeks_before_current": -4,
+          "attention": 0.1081
+        },
+        {
+          "weeks_before_current": -3,
+          "attention": 0.2114
+        },
+        {
+          "weeks_before_current": -2,
+          "attention": 0.0432
+        },
+        {
+          "weeks_before_current": -1,
+          "attention": 0.0634
+        },
+        {
+          "weeks_before_current": 0,
+          "attention": 0.3275
+        }
+      ],
+      "peak_week_offset": 0
+    },
+    {
+      "merchant_id": "merchant_demo_0188",
+      "week_start": "2024-12-16",
+      "predicted_probability": 0.8618,
+      "actual_label": 1,
+      "attention_by_week": [
+        {
+          "weeks_before_current": -7,
+          "attention": 0.1266
+        },
+        {
+          "weeks_before_current": -6,
+          "attention": 0.0584
+        },
+        {
+          "weeks_before_current": -5,
+          "attention": 0.0856
+        },
+        {
+          "weeks_before_current": -4,
+          "attention": 0.0748
+        },
+        {
+          "weeks_before_current": -3,
+          "attention": 0.0538
+        },
+        {
+          "weeks_before_current": -2,
+          "attention": 0.0505
+        },
+        {
+          "weeks_before_current": -1,
+          "attention": 0.0725
+        },
+        {
+          "weeks_before_current": 0,
+          "attention": 0.4777
+        }
+      ],
+      "peak_week_offset": 0
+    },
+    {
+      "merchant_id": "merchant_demo_0593",
+      "week_start": "2024-11-25",
+      "predicted_probability": 0.8615,
+      "actual_label": 0,
+      "attention_by_week": [
+        {
+          "weeks_before_current": -7,
+          "attention": 0.1178
+        },
+        {
+          "weeks_before_current": -6,
+          "attention": 0.0517
+        },
+        {
+          "weeks_before_current": -5,
+          "attention": 0.0922
+        },
+        {
+          "weeks_before_current": -4,
+          "attention": 0.0837
+        },
+        {
+          "weeks_before_current": -3,
+          "attention": 0.0848
+        },
+        {
+          "weeks_before_current": -2,
+          "attention": 0.0531
+        },
+        {
+          "weeks_before_current": -1,
+          "attention": 0.0668
+        },
+        {
+          "weeks_before_current": 0,
+          "attention": 0.45
+        }
+      ],
+      "peak_week_offset": 0
+    },
+    {
+      "merchant_id": "merchant_demo_0161",
+      "week_start": "2024-11-25",
+      "predicted_probability": 0.8597,
+      "actual_label": 0,
+      "attention_by_week": [
+        {
+          "weeks_before_current": -7,
+          "attention": 0.1628
+        },
+        {
+          "weeks_before_current": -6,
+          "attention": 0.1235
+        },
+        {
+          "weeks_before_current": -5,
+          "attention": 0.0823
+        },
+        {
+          "weeks_before_current": -4,
+          "attention": 0.1215
+        },
+        {
+          "weeks_before_current": -3,
+          "attention": 0.0594
+        },
+        {
+          "weeks_before_current": -2,
+          "attention": 0.0454
+        },
+        {
+          "weeks_before_current": -1,
+          "attention": 0.0617
+        },
+        {
+          "weeks_before_current": 0,
+          "attention": 0.3436
+        }
+      ],
+      "peak_week_offset": 0
+    },
+    {
+      "merchant_id": "merchant_demo_0600",
+      "week_start": "2024-10-28",
+      "predicted_probability": 0.8591,
+      "actual_label": 1,
+      "attention_by_week": [
+        {
+          "weeks_before_current": -7,
+          "attention": 0.1146
+        },
+        {
+          "weeks_before_current": -6,
+          "attention": 0.0857
+        },
+        {
+          "weeks_before_current": -5,
+          "attention": 0.086
+        },
+        {
+          "weeks_before_current": -4,
+          "attention": 0.1245
+        },
+        {
+          "weeks_before_current": -3,
+          "attention": 0.0622
+        },
+        {
+          "weeks_before_current": -2,
+          "attention": 0.0498
+        },
+        {
+          "weeks_before_current": -1,
+          "attention": 0.0637
+        },
+        {
+          "weeks_before_current": 0,
+          "attention": 0.4136
+        }
+      ],
+      "peak_week_offset": 0
+    }
+  ]
+}

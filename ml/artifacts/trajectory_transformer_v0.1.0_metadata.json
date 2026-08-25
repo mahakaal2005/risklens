@@ -1,0 +1,59 @@
+{
+  "model_name": "Trajectory Transformer",
+  "model_version": "0.1.0",
+  "seed": 42,
+  "generated_at": "2026-09-03T20:15:16.357068+00:00",
+  "feature_columns": [
+    "refund_rate_change",
+    "chargeback_rate_change",
+    "transaction_volume_change",
+    "refund_to_chargeback_ratio",
+    "delivery_evidence_gap",
+    "support_resolution_hours_normalized",
+    "support_ticket_rate",
+    "merchant_age_days",
+    "transaction_count_30d",
+    "merchant_category",
+    "previous_review_outcome"
+  ],
+  "n_features": 20,
+  "window": 8,
+  "architecture": {
+    "d_model": 32,
+    "n_heads": 4,
+    "n_layers": 2,
+    "epochs": 20,
+    "batch_size": 256,
+    "learning_rate": 0.001,
+    "parameter_count": 18113
+  },
+  "training_row_count": 65700,
+  "validation_row_count": 13500,
+  "split_info": {
+    "train": {
+      "week_count": 73,
+      "row_count": 65700,
+      "week_start_min": "2023-01-02",
+      "week_start_max": "2024-05-20"
+    },
+    "validation": {
+      "week_count": 15,
+      "row_count": 13500,
+      "week_start_min": "2024-05-27",
+      "week_start_max": "2024-09-02"
+    },
+    "test": {
+      "week_count": 16,
+      "row_count": 14400,
+      "week_start_min": "2024-09-09",
+      "week_start_max": "2024-12-23"
+    }
+  },
+  "selected_threshold": 0.15,
+  "threshold_selection_method": "f2_maximizing_subject_to_constraints",
+  "threshold_constraints_met": true,
+  "min_precision_constraint": 0.3,
+  "max_fpr_constraint": 0.2,
+  "role": "evaluation_comparison_only",
+  "statement": "This model is trained on synthetic data for demonstration and decision-support purposes only. It is not a real-world chargeback prediction model. It is evaluated as a comparison baseline only -- Logistic Regression remains the model used for live case scoring, per the preference for interpretable models in anything merchant- or reviewer-facing."
+}
