@@ -1,0 +1,25 @@
+{
+  "seed": 42,
+  "generation_timestamp": "2026-08-24T06:02:10.209008+00:00",
+  "merchant_count": 220,
+  "row_count": 11440,
+  "weeks_per_merchant": 52,
+  "date_range": {
+    "week_start_min": "2025-01-06",
+    "week_start_max": "2025-12-29"
+  },
+  "latent_state_distribution": {
+    "stable_merchant": 8012,
+    "operational_fulfilment_failure": 1061,
+    "seasonal_sale_legitimate_returns": 897,
+    "high_risk_merchant_behaviour": 864,
+    "early_hidden_risk": 606
+  },
+  "label_distribution": {
+    "0": 9806,
+    "1": 1634,
+    "positive_rate": 0.1428
+  },
+  "generator_version": "0.1.0",
+  "statement": "This dataset is synthetic and demonstration-only. It does not represent real merchants, real transactions, or real payment-risk outcomes."
+}

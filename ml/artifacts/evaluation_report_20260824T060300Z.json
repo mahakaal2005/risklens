@@ -1,0 +1,122 @@
+{
+  "report_version": "1.0",
+  "generated_at": "2026-08-24T06:03:00.952673+00:00",
+  "data_mode": "synthetic-only",
+  "synthetic_data_notice": "Synthetic-data metrics demonstrate prototype workflow only and do not prove real-world chargeback-risk performance.",
+  "dataset": {
+    "seed": 42,
+    "generator_version": "0.1.0",
+    "row_count": 11440,
+    "merchant_count": 220,
+    "date_range": {
+      "start": "2025-01-06",
+      "end": "2025-12-29"
+    }
+  },
+  "split": {
+    "train": {
+      "week_count": 36,
+      "row_count": 7920,
+      "date_start": "2025-01-06",
+      "date_end": "2025-09-08"
+    },
+    "validation": {
+      "week_count": 8,
+      "row_count": 1760,
+      "date_start": "2025-09-15",
+      "date_end": "2025-11-03"
+    },
+    "test": {
+      "week_count": 8,
+      "row_count": 1760,
+      "date_start": "2025-11-10",
+      "date_end": "2025-12-29"
+    }
+  },
+  "model": {
+    "name": "Logistic Regression",
+    "version": "0.1.0",
+    "selected_threshold": 0.1,
+    "threshold_selection_method": "f2_maximizing_subject_to_constraints",
+    "feature_count": 11,
+    "excluded_fields": [
+      "merchant_id",
+      "week_start",
+      "label_high_loss_next_30d",
+      "latent_state_for_demo_only"
+    ]
+  },
+  "methods": {
+    "rules_only": {
+      "precision": 0.2689,
+      "recall": 0.4248,
+      "f1": 0.3293,
+      "f2": 0.3807,
+      "pr_auc": 0.2456,
+      "roc_auc": 0.6397,
+      "false_positive_rate": 0.1701,
+      "false_negative_rate": 0.5752,
+      "confusion_matrix": {
+        "tn": 1273,
+        "fp": 261,
+        "fn": 130,
+        "tp": 96
+      },
+      "predicted_review_case_count": 357,
+      "seasonal_sale_false_positive_count": 53,
+      "early_hidden_risk_false_negative_count": 35
+    },
+    "logistic_regression": {
+      "precision": 0.5285,
+      "recall": 0.8628,
+      "f1": 0.6555,
+      "f2": 0.7659,
+      "pr_auc": 0.6527,
+      "roc_auc": 0.9006,
+      "false_positive_rate": 0.1134,
+      "false_negative_rate": 0.1372,
+      "confusion_matrix": {
+        "tn": 1360,
+        "fp": 174,
+        "fn": 31,
+        "tp": 195
+      },
+      "predicted_review_case_count": 369,
+      "seasonal_sale_false_positive_count": 30,
+      "early_hidden_risk_false_negative_count": 4
+    },
+    "combined_policy": {
+      "precision": 0.3748,
+      "recall": 0.8805,
+      "f1": 0.5258,
+      "f2": 0.6934,
+      "pr_auc": 0.6527,
+      "roc_auc": 0.9006,
+      "false_positive_rate": 0.2164,
+      "false_negative_rate": 0.1195,
+      "confusion_matrix": {
+        "tn": 1202,
+        "fp": 332,
+        "fn": 27,
+        "tp": 199
+      },
+      "predicted_review_case_count": 531,
+      "seasonal_sale_false_positive_count": 71,
+      "early_hidden_risk_false_negative_count": 2
+    }
+  },
+  "near_perfect_score_investigation": {
+    "status": "not_triggered",
+    "conditions_checked": [
+      "PR-AUC >= 0.98",
+      "precision >= 0.98 and recall >= 0.98",
+      "zero false positives or zero false negatives"
+    ],
+    "notes": "No near-perfect gate condition was triggered."
+  },
+  "limitations": [
+    "Synthetic data only.",
+    "Metrics demonstrate the prototype workflow and do not prove real-world chargeback-risk performance.",
+    "No real payment gateway, merchant, settlement, enforcement, or fraud decision data is used."
+  ]
+}

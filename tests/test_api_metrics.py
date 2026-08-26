@@ -1,0 +1,101 @@
+import json
+
+import pytest
+from fastapi.testclient import TestClient
+
+import app.api.routes.metrics as metrics_module
+from app.main import app
+from ml.evaluate_model import evaluate
+from ml.evaluation_report import build_report, save_report
+
+
+@pytest.fixture()
+def client():
+    return TestClient(app)
+
+
+@pytest.fixture(scope="module")
+def real_report():
+    result = evaluate()
+    with open("demo_data/synthetic_data_metadata.json", "r", encoding="utf-8") as f:
+        dataset_metadata = json.load(f)
+    with open("ml/artifacts/logistic_regression_v0.1.0_metadata.json", "r", encoding="utf-8") as f:
+        model_metadata = json.load(f)
+    return build_report(result, dataset_metadata, model_metadata)
+
+
+def test_metrics_returns_not_available_when_artifact_missing(client, monkeypatch, tmp_path):
+    missing_path = tmp_path / "does_not_exist.json"
+    monkeypatch.setattr(metrics_module, "DEFAULT_REPORT_PATH", missing_path)
+
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "not_available"
+    assert body["error_code"] == "METRICS_NOT_AVAILABLE"
+    assert body["generation_command"] == "python3 -m ml.evaluate_model"
+    assert body["synthetic_data_notice"]
+
+
+def test_metrics_returns_not_available_for_corrupt_json(client, monkeypatch, tmp_path):
+    corrupt_path = tmp_path / "corrupt.json"
+    corrupt_path.write_text("{not valid json at all")
+    monkeypatch.setattr(metrics_module, "DEFAULT_REPORT_PATH", corrupt_path)
+
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "not_available"
+    assert body["error_code"] == "METRICS_ARTIFACT_INVALID"
+    # Must not leak the parse error or the file path.
+    assert str(corrupt_path) not in json.dumps(body)
+    assert "JSONDecodeError" not in json.dumps(body)
+
+
+def test_metrics_returns_not_available_for_schema_invalid_report(client, monkeypatch, tmp_path):
+    invalid_report = {"report_version": "1.0", "data_mode": "synthetic-only"}  # missing required sections
+    report_path = tmp_path / "invalid_report.json"
+    with open(report_path, "w", encoding="utf-8") as f:
+        json.dump(invalid_report, f)
+    monkeypatch.setattr(metrics_module, "DEFAULT_REPORT_PATH", report_path)
+
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "not_available"
+    assert body["error_code"] == "METRICS_ARTIFACT_INVALID"
+
+
+def test_metrics_returns_available_summary_when_artifact_valid(client, monkeypatch, tmp_path, real_report):
+    report_path = tmp_path / "latest_evaluation_report.json"
+    save_report(real_report, path=report_path, also_timestamped=False)
+    monkeypatch.setattr(metrics_module, "DEFAULT_REPORT_PATH", report_path)
+
+    response = client.get("/metrics")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "available"
+    assert body["error_code"] is None
+    assert body["dataset_seed"] == real_report["dataset"]["seed"]
+    assert body["selected_threshold"] == real_report["model"]["selected_threshold"]
+    assert body["rules_only_metrics"]["precision"] == real_report["methods"]["rules_only"]["precision"]
+    assert body["logistic_regression_metrics"]["recall"] == real_report["methods"]["logistic_regression"]["recall"]
+    assert body["combined_policy_metrics"]["pr_auc"] == real_report["methods"]["combined_policy"]["pr_auc"]
+    assert "do not prove real-world chargeback-risk performance" in body["limitation"]
+
+
+def test_metrics_never_trains_or_evaluates_on_request(client, monkeypatch, tmp_path):
+    import ml.train_baseline_model as train_module
+    import ml.evaluate_model as evaluate_module
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("metrics endpoint must never call train() or evaluate()")
+
+    monkeypatch.setattr(train_module, "train", fail_if_called)
+    monkeypatch.setattr(evaluate_module, "evaluate", fail_if_called)
+
+    missing_path = tmp_path / "does_not_exist.json"
+    monkeypatch.setattr(metrics_module, "DEFAULT_REPORT_PATH", missing_path)
+
+    response = client.get("/metrics")
+    assert response.status_code == 200

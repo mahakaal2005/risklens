@@ -1,0 +1,30 @@
+{
+  "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data",
+  "event_count_by_type": {
+    "payment_captured": 72,
+    "settlement_processed": 20,
+    "refund_created": 8,
+    "refund_processed": 8,
+    "payment_failed": 6,
+    "dispute_created": 4,
+    "dispute_won": 3,
+    "dispute_lost": 1
+  },
+  "merchant_week_count": 20,
+  "unavailable_fields": [
+    "merchant_category",
+    "merchant_age_days",
+    "delivery_evidence_coverage",
+    "support_ticket_rate",
+    "average_support_resolution_time_hours",
+    "previous_review_outcome"
+  ],
+  "prohibited_fields_found": [],
+  "merchant_ids_seen": [
+    "merchant_demo_9001",
+    "merchant_demo_9002",
+    "merchant_demo_9003",
+    "merchant_demo_9004",
+    "merchant_demo_9005"
+  ]
+}

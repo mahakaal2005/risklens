@@ -1,0 +1,47 @@
+{
+  "model_version": "0.1.0",
+  "seed": 42,
+  "generated_at": "2026-08-24T06:02:13.184901+00:00",
+  "feature_columns": [
+    "refund_rate_change",
+    "chargeback_rate_change",
+    "transaction_volume_change",
+    "refund_to_chargeback_ratio",
+    "delivery_evidence_gap",
+    "support_resolution_hours_normalized",
+    "support_ticket_rate",
+    "merchant_age_days",
+    "transaction_count_30d",
+    "merchant_category",
+    "previous_review_outcome"
+  ],
+  "training_row_count": 7920,
+  "validation_row_count": 1760,
+  "split_info": {
+    "train": {
+      "week_count": 36,
+      "row_count": 7920,
+      "week_start_min": "2025-01-06",
+      "week_start_max": "2025-09-08"
+    },
+    "validation": {
+      "week_count": 8,
+      "row_count": 1760,
+      "week_start_min": "2025-09-15",
+      "week_start_max": "2025-11-03"
+    },
+    "test": {
+      "week_count": 8,
+      "row_count": 1760,
+      "week_start_min": "2025-11-10",
+      "week_start_max": "2025-12-29"
+    }
+  },
+  "selected_threshold": 0.1,
+  "threshold_selection_method": "f2_maximizing_subject_to_constraints",
+  "threshold_constraints_met": true,
+  "min_precision_constraint": 0.3,
+  "max_fpr_constraint": 0.2,
+  "class_weight": null,
+  "statement": "This model is trained on synthetic data for demonstration and decision-support purposes only. It is not a real-world chargeback prediction model."
+}

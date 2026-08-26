@@ -1,0 +1,107 @@
+ # Security and Privacy Boundaries — MVP
+
+ Status: Design proposal, rescoped 2026-08-22 to a single flagship scenario (merchant refund/chargeback loss risk). See `docs/RESCOPE_REVIEW.md`.
+
+ ## Scope
+
+ This document describes the security posture of a local, synthetic-data demonstration
+
+ ## What the MVP protects against
+
+ - Accidental inclusion of real payment credentials through schema restrictions.
+ - Basic malformed input through API validation.
+ - Accidental secret commits through `.env.example` and environment-variable configura
+ - Loss of decision traceability through append-only application audit events.
+
+ ## Non-negotiable data restrictions
+
+ Never store or process:
+
+ - Card PAN/card number
+ - CVV
+ - UPI PIN
+ - Bank account credentials
+ - Real Aadhaar/PAN
+ - Real customer identity/contact data
+ - Real merchant identity/bank details
+ - Real payment tokens
+
+ Use synthetic tokens such as `merchant_demo_001`. Per-transaction/customer/device tokens
+ from the earlier four-scenario scope are no longer part of the scored entity (see
+ `DATA_DICTIONARY.md`); if a lower-level synthetic transaction stream is used internally
+ to build merchant-week aggregates, it must follow the same synthetic-token rule.
+
+ Merchant appeal evidence is a free-text field plus fake evidence filenames/URLs only
+ (e.g. `invoice_demo_001.pdf`) — no real file upload pipeline exists or is planned for
+ Phase 1.
+
+ ### Simulated evidence restrictions (implemented, Milestone 5)
+
+ `app/schemas/evidence.py` validates every evidence reference string against a strict
+ safe-pattern allowlist before it can be persisted:
+
+ - Maximum 5 references per submission, 100 characters each.
+ - Must match a safe demo filename/identifier pattern only (letters, digits,
+   underscore, hyphen, optional short extension).
+ - Rejected outright: path traversal (`../`), any `://` scheme (real URLs), shell
+   metacharacters (`;`, `|`, `&`, `` ` ``, `$`), path separators (`/`, `\`), and blank
+   strings.
+ - No file upload, external URL retrieval, or document storage exists anywhere in this
+   codebase — evidence is a list of validated strings only.
+
+ ## MVP controls
+
+ - Local SQLite database only (implemented, Milestone 5). A single local file
+   (`clearrisk_recover.db` by default, configurable via the `DATABASE_URL` environment
+   variable) accessed through SQLAlchemy. No network-exposed database service, no
+   remote connection string is supported beyond what SQLAlchemy itself allows, and no
+   multi-tenant isolation exists — this is a single local demo database.
+ - Input schemas with Pydantic validation.
+ - Configuration in environment variables.
+ - No hard-coded secrets.
+ - Sanitised audit payloads (implemented, Milestone 5): `app/services/audit_service.py`
+   rejects any audit event payload containing `label_high_loss_next_30d`,
+   `latent_state_for_demo_only`, or the enforcement terms `freeze`, `ban`, `terminate`,
+   `hold settlement`, `reject payment` — the write is refused, not silently stripped.
+ - Error messages must not leak internal stack traces in the UI.
+ - Dependency versions pinned in requirements file where practical.
+ - Confirmed (Milestone 5): no real PII, no real payment credentials, and no real
+   financial/enforcement action (freeze, hold, ban, terminate, reject payment) exists in
+   any database table, service, or script in this codebase. All persisted case,
+   evidence, and audit records use only synthetic merchant tokens and simulated data.
+
+ ## Not implemented
+ - Production authentication/authorization.
+ - Encryption at rest/in transit configuration.
+ - Key management.
+ - Secure secrets vault.
+ - Tenant isolation.
+ - Secure evidence-file upload pipeline.
+ - Penetration testing.
+ - Regulatory compliance certification.
+ - Incident response/on-call operations.
+
+ ## Audit-log limitation
+
+ The MVP audit log is append-only at the **application layer only** (implemented,
+ Milestone 5: `app/services/audit_service.py` and `app/db/repositories.py` expose only
+ a create function and read functions for `AuditEvent` — no update or delete method
+ exists in either module, verified by `tests/test_audit_service.py`). This is **not**
+ a blockchain, WORM (write-once-read-many) storage, or any other cryptographically
+ immutable ledger. A person with direct file-level access to the SQLite database file
+ could still alter or delete audit rows outside this application's code path. Producing
+ genuine tamper-evidence (e.g. a hash chain, external ledger, or WORM-backed store)
+ is out of scope for this MVP.
+
+ ## Secure development checks
+
+ Before any demo/release:
+
+ 1. Search repository for prohibited fields and realistic credential patterns.
+ 2. Confirm `.env` is gitignored.
+ 3. Confirm demo data is synthetic.
+ 4. Run tests.
+ 5. Confirm UI labels state “Synthetic data / demonstration only.”
+ 6. Confirm no endpoint initiates payments or external financial actions.
+
+

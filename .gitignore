@@ -1,0 +1,11 @@
+# Local environment
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local SQLite database
+*.db
+
+# External benchmark dataset -- never commit. See docs/EXTERNAL_BENCHMARK.md.
+data/external/

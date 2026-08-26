@@ -1,0 +1,149 @@
+"""Case list, detail, audit-timeline, and reviewer-action routes.
+
+No route here mutates the database directly -- every state-changing
+endpoint calls the existing app/services/case_service.py so state-machine
+enforcement and audit-event creation stay in one place. Local
+synthetic-data demonstration only.
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.api.dependencies import get_db, raise_api_error
+from app.db.models import EvidenceSubmission, ReviewCase
+from app.db.repositories import get_audit_events_for_case, get_case, list_cases
+from app.schemas.api_responses import (
+    AuditEventResponse,
+    AuditTimelineResponse,
+    CaseDetailResponse,
+    CaseListResponse,
+    CaseSummary,
+    ErrorCode,
+    EvidenceSubmissionSummary,
+    ReviewActionRequest,
+    ReviewActionResponse,
+)
+from app.services.audit_service import _assert_payload_is_safe
+from app.services.case_service import CaseNotFoundError, InvalidTransitionError, apply_reviewer_action, start_review
+
+router = APIRouter(tags=["cases"])
+
+
+def _to_case_summary(case: ReviewCase) -> CaseSummary:
+    return CaseSummary(
+        case_id=case.case_id,
+        merchant_id=case.merchant_id,
+        week_start=case.week_start,
+        case_status=case.case_status,
+        risk_signal_intensity=case.risk_signal_intensity,
+        recommendation=case.recommendation,
+        created_at=case.created_at,
+        updated_at=case.updated_at,
+        final_outcome=case.final_outcome,
+    )
+
+
+def _to_evidence_summary(evidence: EvidenceSubmission) -> EvidenceSubmissionSummary:
+    return EvidenceSubmissionSummary(
+        evidence_id=evidence.evidence_id,
+        submitted_at=evidence.submitted_at,
+        status=evidence.status,
+        evidence_references=evidence.evidence_references_json,
+    )
+
+
+def _to_case_detail(case: ReviewCase) -> CaseDetailResponse:
+    return CaseDetailResponse(
+        case_id=case.case_id,
+        merchant_id=case.merchant_id,
+        week_start=case.week_start,
+        case_status=case.case_status,
+        risk_signal_intensity=case.risk_signal_intensity,
+        recommendation=case.recommendation,
+        policy_explanation=case.policy_explanation,
+        model_probability=case.model_probability,
+        rules_only_score=case.rules_only_score,
+        analyst_summary=case.analyst_summary,
+        merchant_safe_explanation=case.merchant_safe_explanation,
+        triggered_rules=case.triggered_rules_json,
+        evidence_checklist=case.evidence_checklist_json,
+        model_version=case.model_version,
+        rules_version=case.rules_version,
+        created_at=case.created_at,
+        updated_at=case.updated_at,
+        resolved_at=case.resolved_at,
+        final_outcome=case.final_outcome,
+        reviewer_note=case.reviewer_note,
+        evidence_submissions=[_to_evidence_summary(e) for e in case.evidence_submissions],
+    )
+
+
+def _to_audit_event_response(event) -> AuditEventResponse:
+    payload = event.event_payload_json
+    _assert_payload_is_safe(payload)  # defense-in-depth re-check at read time
+    return AuditEventResponse(
+        event_sequence_number=event.event_sequence_number,
+        event_timestamp=event.event_timestamp,
+        actor_type=event.actor_type,
+        actor_id=event.actor_id,
+        event_type=event.event_type,
+        event_payload=payload,
+    )
+
+
+@router.get("/cases", response_model=CaseListResponse)
+def list_cases_route(
+    status: str | None = Query(default=None),
+    recommendation: str | None = Query(default=None),
+    intensity: str | None = Query(default=None),
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+) -> CaseListResponse:
+    cases, total = list_cases(db, status=status, recommendation=recommendation, intensity=intensity, limit=limit, offset=offset)
+    return CaseListResponse(items=[_to_case_summary(c) for c in cases], limit=limit, offset=offset, total=total)
+
+
+@router.get("/cases/{case_id}", response_model=CaseDetailResponse)
+def get_case_detail_route(case_id: str, db: Session = Depends(get_db)) -> CaseDetailResponse:
+    case = get_case(db, case_id)
+    if case is None:
+        raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
+    return _to_case_detail(case)
+
+
+@router.get("/cases/{case_id}/audit-events", response_model=AuditTimelineResponse)
+def get_case_audit_events_route(case_id: str, db: Session = Depends(get_db)) -> AuditTimelineResponse:
+    case = get_case(db, case_id)
+    if case is None:
+        raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
+    events = get_audit_events_for_case(db, case_id)
+    return AuditTimelineResponse(case_id=case_id, events=[_to_audit_event_response(e) for e in events])
+
+
+@router.post("/cases/{case_id}/review-actions", response_model=ReviewActionResponse)
+def post_review_action_route(case_id: str, body: ReviewActionRequest, db: Session = Depends(get_db)) -> ReviewActionResponse:
+    if not body.reviewer_actor_id or not body.reviewer_actor_id.strip():
+        raise_api_error(422, ErrorCode.VALIDATION_ERROR, "reviewer_actor_id must not be empty.")
+    if not body.reviewer_note or not body.reviewer_note.strip():
+        raise_api_error(422, ErrorCode.VALIDATION_ERROR, "reviewer_note must not be empty.")
+
+    events_before = len(get_audit_events_for_case(db, case_id)) if get_case(db, case_id) else 0
+
+    try:
+        if body.action.value == "START_REVIEW":
+            case = start_review(db, case_id, reviewer_actor=body.reviewer_actor_id)
+        else:
+            case = apply_reviewer_action(db, case_id, body.action.value, body.reviewer_note, reviewer_actor=body.reviewer_actor_id)
+    except CaseNotFoundError:
+        raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
+    except InvalidTransitionError as exc:
+        raise_api_error(409, ErrorCode.INVALID_CASE_TRANSITION, str(exc))
+    except ValueError as exc:
+        raise_api_error(422, ErrorCode.VALIDATION_ERROR, str(exc))
+
+    all_events = get_audit_events_for_case(db, case_id)
+    new_events = all_events[events_before:]
+    return ReviewActionResponse(case=_to_case_detail(case), new_audit_events=[_to_audit_event_response(e) for e in new_events])

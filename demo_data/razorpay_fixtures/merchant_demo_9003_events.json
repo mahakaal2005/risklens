@@ -1,0 +1,466 @@
+[
+  {
+    "event_id": "evt_demo_9003_0001",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-06T09:00:00",
+    "amount_paise": 262141,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0006",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-06T14:15:00",
+    "amount_paise": 118233,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0008",
+    "event_type": "refund_created",
+    "source_event_name": "refund.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-06T15:00:00",
+    "amount_paise": 220499,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0012",
+    "event_type": "dispute_created",
+    "source_event_name": "payment.dispute.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-06T16:00:00",
+    "amount_paise": 118233,
+    "currency": "INR",
+    "dispute_reason_category": "quality_issue",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0009",
+    "event_type": "refund_processed",
+    "source_event_name": "refund.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-07T09:00:00",
+    "amount_paise": 220499,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0007",
+    "event_type": "payment_failed",
+    "source_event_name": "payment.failed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-07T10:00:00",
+    "amount_paise": 159742,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0002",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-07T10:15:00",
+    "amount_paise": 194800,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0010",
+    "event_type": "refund_created",
+    "source_event_name": "refund.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-07T15:00:00",
+    "amount_paise": 175071,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0011",
+    "event_type": "refund_processed",
+    "source_event_name": "refund.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-08T09:00:00",
+    "amount_paise": 175071,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0003",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-08T11:30:00",
+    "amount_paise": 251349,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0013",
+    "event_type": "dispute_lost",
+    "source_event_name": "dispute.lost",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-09T12:00:00",
+    "amount_paise": 118233,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0004",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-09T12:45:00",
+    "amount_paise": 150407,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0005",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-10T13:00:00",
+    "amount_paise": 284699,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0014",
+    "event_type": "settlement_processed",
+    "source_event_name": "settlement.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-12T06:00:00",
+    "amount_paise": 1261629,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0015",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-13T09:00:00",
+    "amount_paise": 266640,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0020",
+    "event_type": "refund_created",
+    "source_event_name": "refund.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-13T15:00:00",
+    "amount_paise": 129823,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0021",
+    "event_type": "refund_processed",
+    "source_event_name": "refund.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-14T09:00:00",
+    "amount_paise": 129823,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0016",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-14T10:15:00",
+    "amount_paise": 195638,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0017",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-15T11:30:00",
+    "amount_paise": 142638,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0018",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-16T12:45:00",
+    "amount_paise": 197040,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0019",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-17T13:00:00",
+    "amount_paise": 193132,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0022",
+    "event_type": "dispute_created",
+    "source_event_name": "payment.dispute.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-17T16:00:00",
+    "amount_paise": 193132,
+    "currency": "INR",
+    "dispute_reason_category": "item_not_as_described",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0024",
+    "event_type": "settlement_processed",
+    "source_event_name": "settlement.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-19T06:00:00",
+    "amount_paise": 995088,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0025",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-20T09:00:00",
+    "amount_paise": 291136,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0023",
+    "event_type": "dispute_won",
+    "source_event_name": "dispute.won",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-20T12:00:00",
+    "amount_paise": 193132,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0030",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-20T14:15:00",
+    "amount_paise": 170765,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0031",
+    "event_type": "refund_created",
+    "source_event_name": "refund.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-20T15:00:00",
+    "amount_paise": 217770,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0035",
+    "event_type": "dispute_created",
+    "source_event_name": "payment.dispute.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-20T16:00:00",
+    "amount_paise": 170765,
+    "currency": "INR",
+    "dispute_reason_category": "item_not_as_described",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0032",
+    "event_type": "refund_processed",
+    "source_event_name": "refund.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-21T09:00:00",
+    "amount_paise": 217770,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0026",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-21T10:15:00",
+    "amount_paise": 164175,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0033",
+    "event_type": "refund_created",
+    "source_event_name": "refund.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-21T15:00:00",
+    "amount_paise": 127930,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0034",
+    "event_type": "refund_processed",
+    "source_event_name": "refund.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-22T09:00:00",
+    "amount_paise": 127930,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0027",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-22T11:30:00",
+    "amount_paise": 142834,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0036",
+    "event_type": "dispute_won",
+    "source_event_name": "dispute.won",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-23T12:00:00",
+    "amount_paise": 170765,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0028",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-23T12:45:00",
+    "amount_paise": 221178,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0029",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-24T13:00:00",
+    "amount_paise": 199471,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0037",
+    "event_type": "settlement_processed",
+    "source_event_name": "settlement.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-26T06:00:00",
+    "amount_paise": 1189559,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0038",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-27T09:00:00",
+    "amount_paise": 182694,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0042",
+    "event_type": "refund_created",
+    "source_event_name": "refund.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-27T15:00:00",
+    "amount_paise": 175393,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0043",
+    "event_type": "refund_processed",
+    "source_event_name": "refund.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-28T09:00:00",
+    "amount_paise": 175393,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0039",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-28T10:15:00",
+    "amount_paise": 205162,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0040",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-29T11:30:00",
+    "amount_paise": 170186,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0041",
+    "event_type": "payment_captured",
+    "source_event_name": "payment.captured",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-30T12:45:00",
+    "amount_paise": 117350,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0044",
+    "event_type": "dispute_created",
+    "source_event_name": "payment.dispute.created",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-30T16:00:00",
+    "amount_paise": 117350,
+    "currency": "INR",
+    "dispute_reason_category": "duplicate_charge",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0046",
+    "event_type": "settlement_processed",
+    "source_event_name": "settlement.processed",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-31T06:00:00",
+    "amount_paise": 675392,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  },
+  {
+    "event_id": "evt_demo_9003_0045",
+    "event_type": "dispute_won",
+    "source_event_name": "dispute.won",
+    "merchant_id": "merchant_demo_9003",
+    "occurred_at": "2026-07-31T12:00:00",
+    "amount_paise": 117350,
+    "currency": "INR",
+    "fixture_label": "razorpay_shaped_demo_fixture_not_live_razorpay_data"
+  }
+]

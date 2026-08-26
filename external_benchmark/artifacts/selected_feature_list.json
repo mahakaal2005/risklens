@@ -1,0 +1,11 @@
+{
+  "numeric_features": [
+    "transaction_amt",
+    "transaction_amt_has_cents",
+    "transaction_relative_day",
+    "transaction_hour_of_day_approx"
+  ],
+  "categorical_features": [
+    "product_cd"
+  ]
+}

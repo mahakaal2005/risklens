@@ -1,0 +1,185 @@
+# Risk rules — ClearRisk Recover, Milestone 2.
+#
+# Synthetic-data-only, illustrative thresholds for a local prototype. These
+# rules produce evidence and risk signals for human review; they never make
+# an enforcement decision. See rules/README.md and
+# docs/MILESTONE_2_RULES_AND_FEATURES.md for the full rationale.
+#
+# All numeric thresholds live here, not in Python, so they can be reviewed
+# and changed without touching code (per Milestone 2 requirements).
+
+version: "0.2.0"
+
+severity_weights:
+  low: 10
+  medium: 30
+  high: 50
+
+risk_tier_thresholds:
+  medium: 30
+  high: 70
+
+rules:
+  - rule_id: REFUND_RATE_SPIKE
+    version: "0.2.0"
+    enabled: true
+    description: >
+      Detects a meaningful increase in refund rate relative to the merchant's
+      own prior 30-day period.
+    input_fields: [refund_rate_30d, refund_rate_previous_30d, refund_rate_change]
+    thresholds:
+      absolute_increase_min: 0.02
+      relative_multiple_min: 1.5
+    severity: medium
+    analyst_explanation_template: >
+      Refund rate increased from {refund_rate_previous_30d_pct} to {refund_rate_30d_pct}
+      ({refund_rate_change_pct} change).
+    merchant_safe_explanation: >
+      Your recent refund rate is higher than your usual pattern for this account.
+    suggested_evidence:
+      - Recent refund reason breakdown
+      - Any product, listing, or pricing changes in the last 30 days
+      - Delivery/fulfilment evidence for refunded orders
+    recommended_action: REQUEST_EVIDENCE
+    rationale: >
+      A refund-rate increase is an early loss signal, but on its own may reflect
+      a legitimate event such as a sale (see the seasonal-sale fixture), so it
+      recommends gathering evidence rather than escalating.
+    test_example_id: seasonal_sale_false_positive_candidate
+
+  - rule_id: CHARGEBACK_RATE_SPIKE
+    version: "0.2.0"
+    enabled: true
+    description: >
+      Detects a meaningful increase in chargeback rate relative to the
+      merchant's own prior 30-day period.
+    input_fields: [chargeback_rate_30d, chargeback_rate_previous_30d, chargeback_rate_change]
+    thresholds:
+      absolute_increase_min: 0.01
+      relative_multiple_min: 1.5
+    severity: high
+    analyst_explanation_template: >
+      Chargeback rate increased from {chargeback_rate_previous_30d_pct} to
+      {chargeback_rate_30d_pct} ({chargeback_rate_change_pct} change).
+    merchant_safe_explanation: >
+      Your recent chargeback rate is higher than your usual pattern for this account.
+    suggested_evidence:
+      - Recent chargeback/dispute reason breakdown
+      - Proof of delivery or service fulfilment for disputed orders
+      - Customer communication records for disputed orders
+    recommended_action: MANUAL_REVIEW_REQUIRED
+    rationale: >
+      Chargebacks represent a confirmed cardholder dispute (unlike a merchant-
+      initiated refund) and carry direct financial loss and network risk, so
+      this rule is high severity on its own.
+    test_example_id: high_risk_merchant_case
+
+  - rule_id: EVIDENCE_COVERAGE_GAP
+    version: "0.2.0"
+    enabled: true
+    description: >
+      Detects low delivery/fulfilment-evidence coverage, but only in the
+      context of an elevated refund or chargeback signal -- evidence gap
+      alone is not used as a trigger.
+    input_fields: [delivery_evidence_gap, refund_rate_change, chargeback_rate_change]
+    thresholds:
+      evidence_gap_min: 0.35
+      requires_supporting_signal: true
+      supporting_refund_change_min: 0.015
+      supporting_chargeback_change_min: 0.005
+    severity: medium
+    analyst_explanation_template: >
+      Delivery/fulfilment evidence coverage is low ({delivery_evidence_gap_pct} of
+      disputed orders lack adequate evidence) alongside a rising refund or
+      chargeback rate.
+    merchant_safe_explanation: >
+      We were unable to confirm delivery/fulfilment evidence for a notable share
+      of your recent disputed orders.
+    suggested_evidence:
+      - Delivery confirmation or tracking records
+      - Proof-of-service records for digital/service orders
+      - Fulfilment process documentation
+    recommended_action: REQUEST_EVIDENCE
+    rationale: >
+      Low evidence coverage alone does not indicate a fulfilment problem --
+      many good merchants simply keep lighter records. It only becomes a
+      review signal alongside a refund/chargeback increase, per the "least
+      harmful recommendation that fits the risk evidence" policy principle.
+      This is why the rule requires a supporting signal before it can trigger.
+    test_example_id: operational_fulfilment_failure_case
+
+  - rule_id: SUPPORT_OPERATIONAL_STRESS
+    version: "0.2.0"
+    enabled: true
+    description: >
+      Detects elevated support-ticket rate and slower support resolution,
+      in the context of worsening refund or chargeback signals.
+    input_fields: [support_ticket_rate, average_support_resolution_time_hours, refund_rate_change, chargeback_rate_change]
+    thresholds:
+      support_ticket_rate_min: 0.03
+      resolution_hours_min: 40
+      requires_supporting_signal: true
+      supporting_refund_change_min: 0.01
+      supporting_chargeback_change_min: 0.003
+    severity: medium
+    analyst_explanation_template: >
+      Support ticket rate is {support_ticket_rate_pct} and average resolution
+      time is {average_support_resolution_time_hours} hours, alongside a rising
+      refund or chargeback rate.
+    merchant_safe_explanation: >
+      Your recent support ticket volume and response times are outside your
+      usual pattern for this account.
+    suggested_evidence:
+      - Support ticket log summary for the last 30 days
+      - Staffing or process changes affecting support response time
+    recommended_action: REQUEST_EVIDENCE
+    rationale: >
+      Rising support load alongside a refund/chargeback increase suggests an
+      operational (not necessarily fraudulent) cause worth investigating with
+      evidence, matching the operational-fulfilment-failure scenario.
+    test_example_id: operational_fulfilment_failure_case
+
+  - rule_id: COMBINED_LOSS_SIGNAL
+    version: "0.2.0"
+    enabled: true
+    description: >
+      Detects multiple co-occurring loss signals -- refund spike + chargeback
+      spike, or chargeback spike + evidence gap -- which together indicate a
+      more serious pattern than any single rule alone.
+    input_fields: []
+    thresholds:
+      required_co_trigger_pairs:
+        - [REFUND_RATE_SPIKE, CHARGEBACK_RATE_SPIKE]
+        - [CHARGEBACK_RATE_SPIKE, EVIDENCE_COVERAGE_GAP]
+    severity: high
+    analyst_explanation_template: >
+      Multiple loss signals co-occurred this week: {co_triggered_rule_ids}.
+    merchant_safe_explanation: >
+      Several account signals were flagged together this week, and a manual
+      review is required before any further action.
+    suggested_evidence:
+      - All evidence requested by the individual co-triggered rules
+    recommended_action: MANUAL_REVIEW_REQUIRED
+    rationale: >
+      Any single medium-severity signal (e.g. a refund spike alone) is
+      requested-evidence territory, per the least-harmful-recommendation
+      principle. Two or more serious signals co-occurring is a stronger,
+      harder-to-explain-away pattern and warrants a human reviewer's manual
+      review rather than only an evidence request.
+    test_example_id: high_risk_merchant_case
+
+recommendation_policy:
+  # Evaluated top-down; first matching condition wins. Never returns an
+  # enforcement action (freeze/hold/ban/terminate/reject) -- recommendation
+  # only. This is a preliminary mapping (see docs/MILESTONE_2_RULES_AND_FEATURES.md
+  # Section 3) and may be refined once Milestone 7's model exists.
+  - when: combined_signal_and_repeat_confirmed_risk
+    recommendation: ESCALATE_TO_COMPLIANCE
+  - when: combined_signal_or_any_high_severity_rule
+    recommendation: MANUAL_REVIEW_REQUIRED
+  - when: any_medium_severity_rule
+    recommendation: REQUEST_EVIDENCE
+  - when: any_low_severity_rule
+    recommendation: ALLOW_WITH_MONITORING
+  - when: default
+    recommendation: APPROVE

@@ -1,0 +1,601 @@
+{
+  "stable_merchant": {
+    "identification": {
+      "case_preview_id": "case_preview_6fae652b0e139593",
+      "merchant_id": "merchant_demo_0001",
+      "week_start": "2025-11-10",
+      "generated_at": "2026-08-24T07:05:21.366277+00:00",
+      "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
+    },
+    "assessment": {
+      "model_probability": 0.0498,
+      "selected_threshold": 0.1,
+      "risk_signal_intensity": "Low",
+      "rules_only_score": 0,
+      "triggered_rules": [],
+      "recommendation": "APPROVE",
+      "policy_explanation": "Low model risk and no rule triggered.",
+      "model_version": "0.1.0",
+      "rules_version": "0.2.0",
+      "degraded_mode": false
+    },
+    "analyst_explanation": {
+      "summary": "Lower than usual delivery-evidence gap contributed to a lower score. Recommended action: APPROVE. This reflects rule and model signals only, not a confirmed outcome.",
+      "top_model_factors": [
+        {
+          "feature": "delivery_evidence_gap",
+          "contribution": -0.9244,
+          "sentence": "Lower than usual delivery-evidence gap contributed to a lower score."
+        },
+        {
+          "feature": "previous_review_outcome_none",
+          "contribution": -0.2282,
+          "sentence": "Previous review outcome 'none' contributed to a lower score."
+        },
+        {
+          "feature": "merchant_category_apparel",
+          "contribution": -0.2112,
+          "sentence": "Merchant category 'apparel' contributed to a lower score."
+        },
+        {
+          "feature": "merchant_age_days",
+          "contribution": -0.0702,
+          "sentence": "Higher than usual merchant age contributed to a lower score."
+        },
+        {
+          "feature": "refund_to_chargeback_ratio",
+          "contribution": 0.0505,
+          "sentence": "Higher than usual refund-to-chargeback ratio contributed to the elevated score."
+        }
+      ],
+      "triggered_rule_explanations": [],
+      "trend_values": {
+        "refund_rate_current_vs_prior": {
+          "current": 0.0154,
+          "prior": 0.0167
+        },
+        "chargeback_rate_current_vs_prior": {
+          "current": 0.0023,
+          "prior": 0.0027
+        },
+        "transaction_volume_current_vs_prior": {
+          "current": 483873.72,
+          "prior": 460851.59
+        },
+        "delivery_evidence_coverage": 0.9056,
+        "support_ticket_rate": 0.0103,
+        "support_resolution_time_hours": 17.05
+      },
+      "uncertainty_statement": "This assessment reflects synthetic-data model and rule signals as of the prediction date only; it does not guarantee a future outcome and is not a confirmed finding of fraud."
+    },
+    "merchant_safe_explanation": {
+      "reason_category": "no review signal",
+      "review_signal_statement": "This is a review signal only. It is not a final determination of fraud, and no action has been taken against your account.",
+      "reasons": [],
+      "suggested_evidence": [],
+      "appeal_placeholder": "If you believe this review signal does not reflect your business accurately, you may submit a written explanation and supporting evidence for a reviewer to consider. (Simulated appeal flow -- not yet implemented in this milestone.)"
+    },
+    "evidence_checklist": [],
+    "audit_preview_events": [
+      {
+        "event_type": "ASSESSMENT_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.366277+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "EXPLANATION_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.366277+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      }
+    ]
+  },
+  "seasonal_sale_false_positive_candidate": {
+    "identification": {
+      "case_preview_id": "case_preview_b84e09e48542385c",
+      "merchant_id": "merchant_demo_0020",
+      "week_start": "2025-11-10",
+      "generated_at": "2026-08-24T07:05:21.376653+00:00",
+      "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
+    },
+    "assessment": {
+      "model_probability": 0.0951,
+      "selected_threshold": 0.1,
+      "risk_signal_intensity": "Medium",
+      "rules_only_score": 30,
+      "triggered_rules": [
+        "REFUND_RATE_SPIKE"
+      ],
+      "recommendation": "REQUEST_EVIDENCE",
+      "policy_explanation": "Medium model risk alongside a refund/evidence/support signal (e.g. a refund-only seasonal-sale-like pattern) is treated as reviewable, not high-risk.",
+      "model_version": "0.1.0",
+      "rules_version": "0.2.0",
+      "degraded_mode": false
+    },
+    "analyst_explanation": {
+      "summary": "Triggered rule(s): REFUND_RATE_SPIKE. Higher than usual refund-to-chargeback ratio contributed to the elevated score. Recommended action: REQUEST_EVIDENCE. This reflects rule and model signals only, not a confirmed outcome.",
+      "top_model_factors": [
+        {
+          "feature": "refund_to_chargeback_ratio",
+          "contribution": 0.7637,
+          "sentence": "Higher than usual refund-to-chargeback ratio contributed to the elevated score."
+        },
+        {
+          "feature": "delivery_evidence_gap",
+          "contribution": -0.6473,
+          "sentence": "Lower than usual delivery-evidence gap contributed to a lower score."
+        },
+        {
+          "feature": "merchant_category_grocery",
+          "contribution": -0.2425,
+          "sentence": "Merchant category 'grocery' contributed to a lower score."
+        },
+        {
+          "feature": "previous_review_outcome_none",
+          "contribution": -0.2282,
+          "sentence": "Previous review outcome 'none' contributed to a lower score."
+        },
+        {
+          "feature": "refund_rate_change",
+          "contribution": 0.2235,
+          "sentence": "Higher than usual refund-rate change contributed to the elevated score."
+        }
+      ],
+      "triggered_rule_explanations": [
+        {
+          "rule_id": "REFUND_RATE_SPIKE",
+          "severity": "medium",
+          "explanation": "Refund rate increased from 1.63% to 6.45% (4.82% change)."
+        }
+      ],
+      "trend_values": {
+        "refund_rate_current_vs_prior": {
+          "current": 0.0645,
+          "prior": 0.0163
+        },
+        "chargeback_rate_current_vs_prior": {
+          "current": 0.003,
+          "prior": 0.0034
+        },
+        "transaction_volume_current_vs_prior": {
+          "current": 535472.42,
+          "prior": 373830.37
+        },
+        "delivery_evidence_coverage": 0.8855,
+        "support_ticket_rate": 0.0224,
+        "support_resolution_time_hours": 39.74
+      },
+      "uncertainty_statement": "This assessment reflects synthetic-data model and rule signals as of the prediction date only; it does not guarantee a future outcome and is not a confirmed finding of fraud."
+    },
+    "merchant_safe_explanation": {
+      "reason_category": "refund pattern review",
+      "review_signal_statement": "This is a review signal only. It is not a final determination of fraud, and no action has been taken against your account.",
+      "reasons": [
+        "Your recent refund rate is higher than your usual pattern for this account."
+      ],
+      "suggested_evidence": [
+        "Recent refund/cancellation records",
+        "Explanation for any recent product, pricing, or listing changes",
+        "Explanation for the recent transaction-volume change"
+      ],
+      "appeal_placeholder": "If you believe this review signal does not reflect your business accurately, you may submit a written explanation and supporting evidence for a reviewer to consider. (Simulated appeal flow -- not yet implemented in this milestone.)"
+    },
+    "evidence_checklist": [
+      "Recent refund/cancellation records",
+      "Explanation for any recent product, pricing, or listing changes",
+      "Explanation for the recent transaction-volume change"
+    ],
+    "audit_preview_events": [
+      {
+        "event_type": "ASSESSMENT_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.376653+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "EXPLANATION_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.376653+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "REVIEW_CASE_RECOMMENDED",
+        "timestamp": "2026-08-24T07:05:21.376653+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "EVIDENCE_REQUEST_RECOMMENDED",
+        "timestamp": "2026-08-24T07:05:21.376653+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      }
+    ]
+  },
+  "operational_fulfilment_problem": {
+    "identification": {
+      "case_preview_id": "case_preview_f1b93f3619c22b3e",
+      "merchant_id": "merchant_demo_0125",
+      "week_start": "2025-12-22",
+      "generated_at": "2026-08-24T07:05:21.386831+00:00",
+      "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
+    },
+    "assessment": {
+      "model_probability": 0.6109,
+      "selected_threshold": 0.1,
+      "risk_signal_intensity": "High",
+      "rules_only_score": 60,
+      "triggered_rules": [
+        "EVIDENCE_COVERAGE_GAP",
+        "SUPPORT_OPERATIONAL_STRESS"
+      ],
+      "recommendation": "REQUEST_EVIDENCE",
+      "policy_explanation": "High model risk combined with operational-stress/evidence-gap signals, but no confirmed chargeback-spike or combined-loss rule, so evidence is requested rather than escalated to manual review -- treated as a potentially remediable operational problem rather than confirmed abuse.",
+      "model_version": "0.1.0",
+      "rules_version": "0.2.0",
+      "degraded_mode": false
+    },
+    "analyst_explanation": {
+      "summary": "Triggered rule(s): EVIDENCE_COVERAGE_GAP, SUPPORT_OPERATIONAL_STRESS. Higher than usual delivery-evidence gap contributed to the elevated score. Recommended action: REQUEST_EVIDENCE. This reflects rule and model signals only, not a confirmed outcome.",
+      "top_model_factors": [
+        {
+          "feature": "delivery_evidence_gap",
+          "contribution": 3.4655,
+          "sentence": "Higher than usual delivery-evidence gap contributed to the elevated score."
+        },
+        {
+          "feature": "merchant_category_travel",
+          "contribution": -0.3572,
+          "sentence": "Merchant category 'travel' contributed to a lower score."
+        },
+        {
+          "feature": "support_resolution_hours_normalized",
+          "contribution": 0.2476,
+          "sentence": "Higher than usual support resolution time contributed to the elevated score."
+        },
+        {
+          "feature": "merchant_age_days",
+          "contribution": -0.0868,
+          "sentence": "Higher than usual merchant age contributed to a lower score."
+        },
+        {
+          "feature": "refund_rate_change",
+          "contribution": 0.0843,
+          "sentence": "Higher than usual refund-rate change contributed to the elevated score."
+        }
+      ],
+      "triggered_rule_explanations": [
+        {
+          "rule_id": "EVIDENCE_COVERAGE_GAP",
+          "severity": "medium",
+          "explanation": "Delivery/fulfilment evidence coverage is low (41.29% of disputed orders lack adequate evidence) alongside a rising refund or chargeback rate."
+        },
+        {
+          "rule_id": "SUPPORT_OPERATIONAL_STRESS",
+          "severity": "medium",
+          "explanation": "Support ticket rate is 4.36% and average resolution time is 104.79 hours, alongside a rising refund or chargeback rate."
+        }
+      ],
+      "trend_values": {
+        "refund_rate_current_vs_prior": {
+          "current": 0.0567,
+          "prior": 0.0385
+        },
+        "chargeback_rate_current_vs_prior": {
+          "current": 0.0093,
+          "prior": 0.0111
+        },
+        "transaction_volume_current_vs_prior": {
+          "current": 2550770.25,
+          "prior": 2816002.31
+        },
+        "delivery_evidence_coverage": 0.5871,
+        "support_ticket_rate": 0.0436,
+        "support_resolution_time_hours": 104.79
+      },
+      "uncertainty_statement": "This assessment reflects synthetic-data model and rule signals as of the prediction date only; it does not guarantee a future outcome and is not a confirmed finding of fraud."
+    },
+    "merchant_safe_explanation": {
+      "reason_category": "fulfilment evidence review",
+      "review_signal_statement": "This is a review signal only. It is not a final determination of fraud, and no action has been taken against your account.",
+      "reasons": [
+        "We were unable to confirm delivery/fulfilment evidence for a notable share of your recent disputed orders.",
+        "Your recent support ticket volume and response times are outside your usual pattern for this account."
+      ],
+      "suggested_evidence": [
+        "Fulfilment/delivery proof for a sample of disputed orders",
+        "Customer-support response records",
+        "Plan to address recurring operational issues"
+      ],
+      "appeal_placeholder": "If you believe this review signal does not reflect your business accurately, you may submit a written explanation and supporting evidence for a reviewer to consider. (Simulated appeal flow -- not yet implemented in this milestone.)"
+    },
+    "evidence_checklist": [
+      "Fulfilment/delivery proof for a sample of disputed orders",
+      "Customer-support response records",
+      "Plan to address recurring operational issues"
+    ],
+    "audit_preview_events": [
+      {
+        "event_type": "ASSESSMENT_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.386831+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "EXPLANATION_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.386831+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "REVIEW_CASE_RECOMMENDED",
+        "timestamp": "2026-08-24T07:05:21.386831+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "EVIDENCE_REQUEST_RECOMMENDED",
+        "timestamp": "2026-08-24T07:05:21.386831+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      }
+    ]
+  },
+  "high_risk_combined_loss_case": {
+    "identification": {
+      "case_preview_id": "case_preview_51376c9cafa69de2",
+      "merchant_id": "merchant_demo_0010",
+      "week_start": "2025-11-17",
+      "generated_at": "2026-08-24T07:05:21.399085+00:00",
+      "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
+    },
+    "assessment": {
+      "model_probability": 0.8141,
+      "selected_threshold": 0.1,
+      "risk_signal_intensity": "High",
+      "rules_only_score": 100,
+      "triggered_rules": [
+        "REFUND_RATE_SPIKE",
+        "CHARGEBACK_RATE_SPIKE",
+        "EVIDENCE_COVERAGE_GAP",
+        "SUPPORT_OPERATIONAL_STRESS",
+        "COMBINED_LOSS_SIGNAL"
+      ],
+      "recommendation": "MANUAL_REVIEW_REQUIRED",
+      "policy_explanation": "High ML risk together with a chargeback-spike or combined-loss rule trigger indicates a serious, model-and-rule-confirmed pattern.",
+      "model_version": "0.1.0",
+      "rules_version": "0.2.0",
+      "degraded_mode": false
+    },
+    "analyst_explanation": {
+      "summary": "Triggered rule(s): REFUND_RATE_SPIKE, CHARGEBACK_RATE_SPIKE, EVIDENCE_COVERAGE_GAP, SUPPORT_OPERATIONAL_STRESS, COMBINED_LOSS_SIGNAL. Higher than usual delivery-evidence gap contributed to the elevated score. Recommended action: MANUAL_REVIEW_REQUIRED. This reflects rule and model signals only, not a confirmed outcome.",
+      "top_model_factors": [
+        {
+          "feature": "delivery_evidence_gap",
+          "contribution": 6.4867,
+          "sentence": "Higher than usual delivery-evidence gap contributed to the elevated score."
+        },
+        {
+          "feature": "previous_review_outcome_confirmed_risk",
+          "contribution": -0.6096,
+          "sentence": "Previous review outcome 'confirmed_risk' contributed to a lower score."
+        },
+        {
+          "feature": "chargeback_rate_change",
+          "contribution": -0.5503,
+          "sentence": "Higher than usual chargeback-rate change contributed to a lower score."
+        },
+        {
+          "feature": "refund_rate_change",
+          "contribution": 0.326,
+          "sentence": "Higher than usual refund-rate change contributed to the elevated score."
+        },
+        {
+          "feature": "merchant_category_electronics",
+          "contribution": -0.2555,
+          "sentence": "Merchant category 'electronics' contributed to a lower score."
+        }
+      ],
+      "triggered_rule_explanations": [
+        {
+          "rule_id": "REFUND_RATE_SPIKE",
+          "severity": "medium",
+          "explanation": "Refund rate increased from 1.52% to 8.55% (7.03% change)."
+        },
+        {
+          "rule_id": "CHARGEBACK_RATE_SPIKE",
+          "severity": "high",
+          "explanation": "Chargeback rate increased from 0.22% to 3.56% (3.34% change)."
+        },
+        {
+          "rule_id": "EVIDENCE_COVERAGE_GAP",
+          "severity": "medium",
+          "explanation": "Delivery/fulfilment evidence coverage is low (63.21% of disputed orders lack adequate evidence) alongside a rising refund or chargeback rate."
+        },
+        {
+          "rule_id": "SUPPORT_OPERATIONAL_STRESS",
+          "severity": "medium",
+          "explanation": "Support ticket rate is 6.45% and average resolution time is 55.44 hours, alongside a rising refund or chargeback rate."
+        },
+        {
+          "rule_id": "COMBINED_LOSS_SIGNAL",
+          "severity": "high",
+          "explanation": "Multiple loss signals co-occurred this week: CHARGEBACK_RATE_SPIKE, EVIDENCE_COVERAGE_GAP, REFUND_RATE_SPIKE."
+        }
+      ],
+      "trend_values": {
+        "refund_rate_current_vs_prior": {
+          "current": 0.0855,
+          "prior": 0.0152
+        },
+        "chargeback_rate_current_vs_prior": {
+          "current": 0.0356,
+          "prior": 0.0022
+        },
+        "transaction_volume_current_vs_prior": {
+          "current": 634654.59,
+          "prior": 566026.71
+        },
+        "delivery_evidence_coverage": 0.3679,
+        "support_ticket_rate": 0.0645,
+        "support_resolution_time_hours": 55.44
+      },
+      "uncertainty_statement": "This assessment reflects synthetic-data model and rule signals as of the prediction date only; it does not guarantee a future outcome and is not a confirmed finding of fraud."
+    },
+    "merchant_safe_explanation": {
+      "reason_category": "combined account review",
+      "review_signal_statement": "This is a review signal only. It is not a final determination of fraud, and no action has been taken against your account.",
+      "reasons": [
+        "Your recent refund rate is higher than your usual pattern for this account.",
+        "Your recent chargeback rate is higher than your usual pattern for this account.",
+        "We were unable to confirm delivery/fulfilment evidence for a notable share of your recent disputed orders.",
+        "Your recent support ticket volume and response times are outside your usual pattern for this account.",
+        "Several account signals were flagged together this week, and a manual review is required before any further action."
+      ],
+      "suggested_evidence": [
+        "Recent refund/cancellation records",
+        "Explanation for any recent product, pricing, or listing changes",
+        "Chargeback/dispute reason breakdown",
+        "Proof of delivery or service fulfilment for disputed orders",
+        "Fulfilment/delivery proof for a sample of disputed orders",
+        "Customer-support response records",
+        "Plan to address recurring operational issues"
+      ],
+      "appeal_placeholder": "If you believe this review signal does not reflect your business accurately, you may submit a written explanation and supporting evidence for a reviewer to consider. (Simulated appeal flow -- not yet implemented in this milestone.)"
+    },
+    "evidence_checklist": [
+      "Recent refund/cancellation records",
+      "Explanation for any recent product, pricing, or listing changes",
+      "Chargeback/dispute reason breakdown",
+      "Proof of delivery or service fulfilment for disputed orders",
+      "Fulfilment/delivery proof for a sample of disputed orders",
+      "Customer-support response records",
+      "Plan to address recurring operational issues"
+    ],
+    "audit_preview_events": [
+      {
+        "event_type": "ASSESSMENT_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.399085+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "EXPLANATION_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.399085+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "REVIEW_CASE_RECOMMENDED",
+        "timestamp": "2026-08-24T07:05:21.399085+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "MANUAL_REVIEW_RECOMMENDED",
+        "timestamp": "2026-08-24T07:05:21.399085+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      }
+    ]
+  },
+  "early_hidden_risk_case": {
+    "identification": {
+      "case_preview_id": "case_preview_99e078e8f5658282",
+      "merchant_id": "merchant_demo_0007",
+      "week_start": "2025-12-08",
+      "generated_at": "2026-08-24T07:05:21.412337+00:00",
+      "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
+    },
+    "assessment": {
+      "model_probability": 0.0808,
+      "selected_threshold": 0.1,
+      "risk_signal_intensity": "Medium",
+      "rules_only_score": 0,
+      "triggered_rules": [],
+      "recommendation": "ALLOW_WITH_MONITORING",
+      "policy_explanation": "Medium model risk with no supporting rule signal; monitored rather than actioned.",
+      "model_version": "0.1.0",
+      "rules_version": "0.2.0",
+      "degraded_mode": false
+    },
+    "analyst_explanation": {
+      "summary": "Previous review outcome 'none' contributed to a lower score. Recommended action: ALLOW_WITH_MONITORING. This reflects rule and model signals only, not a confirmed outcome.",
+      "top_model_factors": [
+        {
+          "feature": "previous_review_outcome_none",
+          "contribution": -0.2282,
+          "sentence": "Previous review outcome 'none' contributed to a lower score."
+        },
+        {
+          "feature": "merchant_category_apparel",
+          "contribution": -0.2112,
+          "sentence": "Merchant category 'apparel' contributed to a lower score."
+        },
+        {
+          "feature": "delivery_evidence_gap",
+          "contribution": -0.1084,
+          "sentence": "Lower than usual delivery-evidence gap contributed to a lower score."
+        },
+        {
+          "feature": "merchant_age_days",
+          "contribution": -0.0681,
+          "sentence": "Higher than usual merchant age contributed to a lower score."
+        },
+        {
+          "feature": "refund_to_chargeback_ratio",
+          "contribution": -0.0435,
+          "sentence": "Lower than usual refund-to-chargeback ratio contributed to a lower score."
+        }
+      ],
+      "triggered_rule_explanations": [],
+      "trend_values": {
+        "refund_rate_current_vs_prior": {
+          "current": 0.0261,
+          "prior": 0.0261
+        },
+        "chargeback_rate_current_vs_prior": {
+          "current": 0.0055,
+          "prior": 0.0057
+        },
+        "transaction_volume_current_vs_prior": {
+          "current": 380908.68,
+          "prior": 373660.11
+        },
+        "delivery_evidence_coverage": 0.8464,
+        "support_ticket_rate": 0.0165,
+        "support_resolution_time_hours": 37.01
+      },
+      "uncertainty_statement": "This assessment reflects synthetic-data model and rule signals as of the prediction date only; it does not guarantee a future outcome and is not a confirmed finding of fraud."
+    },
+    "merchant_safe_explanation": {
+      "reason_category": "no review signal",
+      "review_signal_statement": "This is a review signal only. It is not a final determination of fraud, and no action has been taken against your account.",
+      "reasons": [],
+      "suggested_evidence": [],
+      "appeal_placeholder": "If you believe this review signal does not reflect your business accurately, you may submit a written explanation and supporting evidence for a reviewer to consider. (Simulated appeal flow -- not yet implemented in this milestone.)"
+    },
+    "evidence_checklist": [],
+    "audit_preview_events": [
+      {
+        "event_type": "ASSESSMENT_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.412337+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "EXPLANATION_GENERATED",
+        "timestamp": "2026-08-24T07:05:21.412337+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      },
+      {
+        "event_type": "REVIEW_CASE_RECOMMENDED",
+        "timestamp": "2026-08-24T07:05:21.412337+00:00",
+        "preview_only": true,
+        "note": "Preview event only -- not persisted to any database or audit log in this milestone."
+      }
+    ]
+  }
+}

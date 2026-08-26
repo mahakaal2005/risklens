@@ -1,0 +1,177 @@
+{
+  "fixture_label": "external_anonymized_transaction_fraud_benchmark_ieee_cis",
+  "non_claims": "This external benchmark uses a public anonymized transaction-level fraud dataset. It does not validate ClearRisk Recover's synthetic merchant-week refund/chargeback-loss model, merchant evidence workflow, or any Razorpay/UPI/payment-gateway integration. This benchmark is not India-specific, not Razorpay data, not UPI data, and not proof of production fraud performance.",
+  "dataset_source": "IEEE-CIS Fraud Detection (Kaggle) -- manually downloaded, not verified or redistributed by this project",
+  "split": {
+    "train": {
+      "row_count": 413378,
+      "transaction_dt_min": 86400.0,
+      "transaction_dt_max": 10437996.0
+    },
+    "validation": {
+      "row_count": 88581,
+      "transaction_dt_min": 10438003.0,
+      "transaction_dt_max": 13151840.0
+    },
+    "test": {
+      "row_count": 88581,
+      "transaction_dt_min": 13151880.0,
+      "transaction_dt_max": 15811131.0
+    }
+  },
+  "selected_features": {
+    "numeric_features": [
+      "transaction_amt",
+      "transaction_amt_has_cents",
+      "transaction_relative_day",
+      "transaction_hour_of_day_approx"
+    ],
+    "categorical_features": [
+      "product_cd"
+    ]
+  },
+  "model": "LogisticRegression (class_weight=balanced), scikit-learn Pipeline",
+  "threshold_selection": {
+    "grid": [
+      {
+        "threshold": 0.05,
+        "f2": 0.15096924038948278,
+        "precision": 0.03434145019812375,
+        "recall": 1.0
+      },
+      {
+        "threshold": 0.1,
+        "f2": 0.15096924038948278,
+        "precision": 0.03434145019812375,
+        "recall": 1.0
+      },
+      {
+        "threshold": 0.15,
+        "f2": 0.15096924038948278,
+        "precision": 0.03434145019812375,
+        "recall": 1.0
+      },
+      {
+        "threshold": 0.2,
+        "f2": 0.15373665480427046,
+        "precision": 0.03508853356849458,
+        "recall": 0.9940828402366864
+      },
+      {
+        "threshold": 0.25,
+        "f2": 0.19756230150782525,
+        "precision": 0.047840094225239896,
+        "recall": 0.9079552925706772
+      },
+      {
+        "threshold": 0.3,
+        "f2": 0.20318941693471662,
+        "precision": 0.04978631292668036,
+        "recall": 0.8846153846153846
+      },
+      {
+        "threshold": 0.35,
+        "f2": 0.20516158676673305,
+        "precision": 0.05043108316704943,
+        "recall": 0.8806706114398422
+      },
+      {
+        "threshold": 0.4,
+        "f2": 0.205997412518482,
+        "precision": 0.05070128885519333,
+        "recall": 0.8793556870479947
+      },
+      {
+        "threshold": 0.45,
+        "f2": 0.20637275354256487,
+        "precision": 0.05083261965933961,
+        "recall": 0.8780407626561473
+      },
+      {
+        "threshold": 0.5,
+        "f2": 0.20688106081730023,
+        "precision": 0.05098690489825526,
+        "recall": 0.8780407626561473
+      },
+      {
+        "threshold": 0.55,
+        "f2": 0.21938492476249913,
+        "precision": 0.05560681957992794,
+        "recall": 0.8320184089414858
+      },
+      {
+        "threshold": 0.6,
+        "f2": 0.2763139354656897,
+        "precision": 0.08410172835270403,
+        "recall": 0.6446416831032216
+      },
+      {
+        "threshold": 0.65,
+        "f2": 0.2986123309327244,
+        "precision": 0.10431367736393202,
+        "recall": 0.5588428665351742
+      },
+      {
+        "threshold": 0.7,
+        "f2": 0.2968422748509747,
+        "precision": 0.11642969984202212,
+        "recall": 0.48454963839579224
+      },
+      {
+        "threshold": 0.75,
+        "f2": 0.28510524913402613,
+        "precision": 0.12405797101449276,
+        "recall": 0.42209072978303747
+      },
+      {
+        "threshold": 0.8,
+        "f2": 0.2778030786046088,
+        "precision": 0.12461695607763024,
+        "recall": 0.40105193951347795
+      },
+      {
+        "threshold": 0.85,
+        "f2": 0.11707418151678409,
+        "precision": 0.14675324675324675,
+        "recall": 0.11143984220907298
+      },
+      {
+        "threshold": 0.9,
+        "f2": 0.0052716950527169504,
+        "precision": 0.08024691358024691,
+        "recall": 0.004273504273504274
+      },
+      {
+        "threshold": 0.95,
+        "f2": 0.0020448225094061834,
+        "precision": 0.08620689655172414,
+        "recall": 0.001643655489809336
+      }
+    ],
+    "selected": {
+      "threshold": 0.65,
+      "f2": 0.2986123309327244,
+      "precision": 0.10431367736393202,
+      "recall": 0.5588428665351742,
+      "fallback_used": false
+    }
+  },
+  "test_class_prevalence": 0.03480430340592226,
+  "test_metrics": {
+    "threshold": 0.65,
+    "precision": 0.08748328877005347,
+    "recall": 0.6792085630879013,
+    "f1": 0.15500203560457457,
+    "f2": 0.28868423955001654,
+    "pr_auc": 0.1087995893737894,
+    "roc_auc_secondary": 0.7704773669735552,
+    "false_positive_rate": 0.2554679641629044,
+    "false_negative_rate": 0.3207914369120986,
+    "confusion_matrix": {
+      "true_negative": 63656,
+      "false_positive": 21842,
+      "false_negative": 989,
+      "true_positive": 2094
+    }
+  }
+}
