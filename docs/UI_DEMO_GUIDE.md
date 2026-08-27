@@ -24,6 +24,7 @@ python3 -m ml.generate_demo_cases
 # 3. Seed the local demo database (delete first for a fully fresh run)
 rm -f clearrisk_recover.db
 python3 scripts/seed_demo_cases.py
+python3 scripts/seed_demo_users.py    # prints demo login credentials once -- save them
 ```
 
 ```bash
@@ -36,7 +37,7 @@ uvicorn app.main:app --reload
 streamlit run dashboard/streamlit_app.py
 ```
 
-Open [http://localhost:8501](http://localhost:8501).
+Open [http://localhost:8501](http://localhost:8501) and sign in with one of the three demo accounts printed by `scripts/seed_demo_users.py` in step 3 (usernames: `reviewer_demo`, `merchant_demo`, `riskmanager_demo` — passwords are randomly generated each run, so copy them from your terminal). See `docs/PHASE_2_AUTH_DESIGN.md` and `docs/MILESTONE_9_AUTH.md` for what each role can do. This is local-demo authentication only, not production-grade.
 
 **If `streamlit run ...` fails with `ModuleNotFoundError: No module named 'google.protobuf'`:** your `streamlit` executable's shebang line points at a different Python interpreter than the one Streamlit's dependencies were installed into. Use `python3 -m streamlit run dashboard/streamlit_app.py` instead — this reliably uses the same `python3` your virtual environment/pyenv is configured to.
 
@@ -95,9 +96,10 @@ To start over from a completely clean state:
 ```bash
 rm -f clearrisk_recover.db
 python3 scripts/seed_demo_cases.py
+python3 scripts/seed_demo_users.py
 ```
 
-Restart the FastAPI process afterward (`uvicorn app.main:app --reload`) — a running FastAPI process may hold an open connection to the old database file; restarting it ensures it picks up the freshly seeded one.
+Resetting the database also clears the `users`/`sessions` tables, so you'll need the newly printed demo credentials (old passwords stop working) and everyone currently logged into the dashboard is signed out. Restart the FastAPI process afterward (`uvicorn app.main:app --reload`) — a running FastAPI process may hold an open connection to the old database file; restarting it ensures it picks up the freshly seeded one.
 
 To regenerate the underlying data/model/report from scratch, repeat step 1 of the startup commands before reseeding.
 
@@ -110,3 +112,7 @@ To regenerate the underlying data/model/report from scratch, repeat step 1 of th
 **Review Queue / Case Detail / Audit Timeline show "No cases exist yet."**: the database is empty or was reset. Run `python3 scripts/seed_demo_cases.py` and restart `uvicorn`.
 
 **Streamlit shows stale case data after an action**: most actions call `st.rerun()` automatically; if a page still looks stale, use your browser's refresh or re-select the case from the dropdown.
+
+**Login fails with "Invalid username or password."**: the demo accounts don't exist yet, or the database was reset since they were seeded. Run `python3 scripts/seed_demo_users.py` and use the freshly printed credentials — passwords are regenerated every time new accounts are created and are never the same twice.
+
+**A page/action I expect isn't visible**: the sidebar only shows the pages your logged-in role can use (`reviewer`: Overview/Review Queue/Case Detail/Audit Timeline; `merchant`: Merchant Response/Case Detail/Audit Timeline; `risk_manager`: Overview/Audit Timeline, read-only). Sign out and back in as a different demo account to see other pages.

@@ -105,10 +105,11 @@
 | ML model (Logistic Regression) | Produces interpretable `label_high_loss_next_30d` probability | Planned for Phase 1 MVP | Model validation, monitoring, champion/challenger models |
 | Explanation layer | Converts signals into safe explanations with concrete before/after trend values | Planned for Phase 1 MVP | Extend explanation storage for evidence-attachment context; no change to safety rules |
 | Policy engine | Selects a recommendation, never enforcement | Planned for Phase 1 MVP | Configurable review SLA, notification simulation, approval workflow |
-| Case service | Creates/retrieves/updates review cases (one per flagged merchant-week) | Planned for Phase 1 MVP | Authentication and basic roles (Phase 2); real reviewer queues and escalation (Phase 3) |
-| Appeals service | Stores simulated merchant evidence and appeal note | Planned for Phase 1 MVP | Evidence attachments (Phase 2); secure evidence storage (Phase 3) |
+| Auth service | Local login, session tokens, 3 roles (`reviewer`/`merchant`/`risk_manager`) | Out of scope (Phase 1) | **Implemented, Phase 2** (`app/services/auth_service.py`) — local-demo grade only (see SECURITY.md); real identity provider / MFA / production hardening remains Phase 3 |
+| Case service | Creates/retrieves/updates review cases (one per flagged merchant-week) | Planned for Phase 1 MVP | **Authentication and basic roles: implemented, Phase 2** (actor derived from session, not client input; merchant-role reads filtered to own `merchant_id`); real reviewer queues and escalation (Phase 3) |
+| Appeals service | Stores simulated merchant evidence and appeal note | Planned for Phase 1 MVP | Evidence attachments (Phase 2, not yet built); secure evidence storage (Phase 3) |
 | Audit service | Appends event history | Planned for Phase 1 MVP | Tamper-evident retention and access controls |
-| Dashboard | Displays cases, explanation, outcomes, metrics, rules-only vs. rules+ML comparison | Planned for Phase 1 MVP | Authentication/roles (Phase 2); formal compliance/privacy reporting (Phase 3) |
+| Dashboard | Displays cases, explanation, outcomes, metrics, rules-only vs. rules+ML comparison | Planned for Phase 1 MVP | **Authentication/roles: implemented, Phase 2** (login gate, role-based page visibility); formal compliance/privacy reporting (Phase 3) |
 | Gateway connector | Would ingest real gateway events | Out of scope | Requires partnership and approved API/data contract |
 | Real enforcement service | Holds/funds restrictions/termination | Prohibited | Human-authorized gateway workflow only |
 

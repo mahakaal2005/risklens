@@ -70,8 +70,30 @@
    any database table, service, or script in this codebase. All persisted case,
    evidence, and audit records use only synthetic merchant tokens and simulated data.
 
+ ## Local-demo authentication (implemented, Phase 2)
+
+ `app/services/auth_service.py` adds local login and three roles (`reviewer`,
+ `merchant`, `risk_manager`) -- see `docs/PHASE_2_AUTH_DESIGN.md` and
+ `docs/MILESTONE_9_AUTH.md` for the full design and as-built report. This is
+ **not** production-grade auth:
+
+ - Password hashing: stdlib `hashlib.pbkdf2_hmac` (260,000 iterations),
+   adequate for this local single-operator prototype, not a claim of
+   production password-security compliance.
+ - No MFA, no password reset flow, no login rate limiting/lockout, no
+   OAuth/SSO, no external identity provider.
+ - Sessions are opaque server-side tokens (not JWT) with a fixed 12-hour
+   expiry -- a local demo session, not a production refresh-token scheme.
+ - Accounts are seeded, fixed demo identities
+   (`scripts/seed_demo_users.py`) -- not a real user-registration system.
+ - Enforced at the FastAPI layer (every write endpoint requires a valid
+   session; the actor recorded in the audit log is derived from the
+   session, never from client-supplied input) -- real access control for
+   this prototype, not decoration, but still local-only.
+
  ## Not implemented
- - Production authentication/authorization.
+ - Production-grade authentication hardening (MFA, password reset, rate
+   limiting, external identity provider -- see above).
  - Encryption at rest/in transit configuration.
  - Key management.
  - Secure secrets vault.

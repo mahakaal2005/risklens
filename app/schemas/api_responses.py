@@ -65,6 +65,8 @@ class ErrorCode(str, Enum):
     METRICS_NOT_AVAILABLE = "METRICS_NOT_AVAILABLE"
     METRICS_ARTIFACT_INVALID = "METRICS_ARTIFACT_INVALID"
     INTERNAL_SAFE_ERROR = "INTERNAL_SAFE_ERROR"
+    AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED"
+    FORBIDDEN = "FORBIDDEN"
 
 
 class ErrorDetail(BaseModel):
@@ -154,8 +156,11 @@ class AuditTimelineResponse(BaseModel):
 
 
 class ReviewActionRequest(BaseModel):
+    """No actor-id field: the reviewer's identity is derived entirely from
+    the authenticated session (Phase 2 auth), never from client input --
+    see docs/PHASE_2_AUTH_DESIGN.md Section 6."""
+
     action: ReviewActionAPI
-    reviewer_actor_id: str
     reviewer_note: str
 
 
@@ -166,7 +171,10 @@ class ReviewActionResponse(BaseModel):
 
 
 class EvidenceSubmissionRequestBody(BaseModel):
-    merchant_actor_id: str
+    """No actor-id field: the merchant's identity is derived entirely from
+    the authenticated session (Phase 2 auth), never from client input --
+    see docs/PHASE_2_AUTH_DESIGN.md Section 6."""
+
     merchant_explanation_text: str
     evidence_references: list[str] = []
 

@@ -11,8 +11,6 @@ import streamlit as st
 from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
 from dashboard.components.common import render_error
 
-DEMO_MERCHANT_ACTOR = "merchant_demo_001"
-
 EXAMPLE_REFERENCES = [
     "invoice_demo_001.pdf",
     "delivery_proof_demo_001.pdf",
@@ -78,7 +76,7 @@ def render_merchant_response(client: ClearRiskAPIClient) -> None:
     if st.button("Submit response", type="primary", key="submit_merchant_response"):
         evidence_references = [ref.strip() for ref in references_text.split(",") if ref.strip()]
         try:
-            client.submit_evidence(selected_case_id, DEMO_MERCHANT_ACTOR, explanation_text, evidence_references)
+            client.submit_evidence(selected_case_id, explanation_text, evidence_references)
             st.success("Evidence submitted. The case has moved to EVIDENCE_SUBMITTED.")
             st.rerun()
         except DashboardAPIError as exc:

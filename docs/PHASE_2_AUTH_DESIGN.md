@@ -160,11 +160,11 @@ Changed files:
 - `docs/API_CONTRACT.md`, `SECURITY.md`, `ARCHITECTURE.md` — updated to describe the new auth layer and its explicit non-goals.
 - `tests/test_api_cases.py`, `test_api_evidence.py`, `test_dashboard_api_client.py`, `test_dashboard_safety.py` — updated for the new required auth header and (if option A) the changed request shape.
 
-## 9. Open questions for you
+## 9. Decisions (approved)
 
-1. Section 6: option A (remove actor-id fields, derive from session) or B (keep fields, cross-check against session)? Recommendation: A.
-2. Section 5: should merchant-role read access to `GET /cases`/`GET /cases/{id}` be filtered to their own `merchant_id`, or left unrestricted for this single-operator local demo? Recommendation: filtered.
-3. Session lifetime — 12 hours suggested above (long enough for one demo/judging session, short enough to not feel like a permanent credential). Any preference?
-4. Do you want the three demo accounts' passwords printed once by the seed script (visible in your terminal, not committed anywhere), or would you rather set them yourself via an environment variable at seed time?
+1. Section 6: **Option A** — actor-id fields removed entirely from both write request bodies; the actor is derived solely from the session token.
+2. Section 5: merchant-role read access to `GET /cases`/`GET /cases/{id}` **is filtered** to their own `merchant_id`.
+3. Session lifetime: **12 hours**.
+4. Demo credentials: `scripts/seed_demo_users.py` generates and **prints them once** to the terminal on first run — nothing committed to any file.
 
-Awaiting your answers and go-ahead before touching any file under Section 8.
+Approved. Implementation proceeding on branch `phase-2-auth-design`, in the order listed in Section 8, with a stop-and-report checkpoint after the DB/service/API layer and before the dashboard/tests layer.

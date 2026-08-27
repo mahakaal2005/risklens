@@ -4,7 +4,7 @@
       "case_preview_id": "case_preview_6fae652b0e139593",
       "merchant_id": "merchant_demo_0001",
       "week_start": "2025-11-10",
-      "generated_at": "2026-08-24T07:05:21.366277+00:00",
+      "generated_at": "2026-08-27T13:51:12.148595+00:00",
       "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
     },
     "assessment": {
@@ -79,13 +79,13 @@
     "audit_preview_events": [
       {
         "event_type": "ASSESSMENT_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.366277+00:00",
+        "timestamp": "2026-08-27T13:51:12.148595+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "EXPLANATION_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.366277+00:00",
+        "timestamp": "2026-08-27T13:51:12.148595+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       }
@@ -96,7 +96,7 @@
       "case_preview_id": "case_preview_b84e09e48542385c",
       "merchant_id": "merchant_demo_0020",
       "week_start": "2025-11-10",
-      "generated_at": "2026-08-24T07:05:21.376653+00:00",
+      "generated_at": "2026-08-27T13:51:12.157401+00:00",
       "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
     },
     "assessment": {
@@ -189,25 +189,25 @@
     "audit_preview_events": [
       {
         "event_type": "ASSESSMENT_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.376653+00:00",
+        "timestamp": "2026-08-27T13:51:12.157401+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "EXPLANATION_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.376653+00:00",
+        "timestamp": "2026-08-27T13:51:12.157401+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "REVIEW_CASE_RECOMMENDED",
-        "timestamp": "2026-08-24T07:05:21.376653+00:00",
+        "timestamp": "2026-08-27T13:51:12.157401+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "EVIDENCE_REQUEST_RECOMMENDED",
-        "timestamp": "2026-08-24T07:05:21.376653+00:00",
+        "timestamp": "2026-08-27T13:51:12.157401+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       }
@@ -218,7 +218,7 @@
       "case_preview_id": "case_preview_f1b93f3619c22b3e",
       "merchant_id": "merchant_demo_0125",
       "week_start": "2025-12-22",
-      "generated_at": "2026-08-24T07:05:21.386831+00:00",
+      "generated_at": "2026-08-27T13:51:12.165852+00:00",
       "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
     },
     "assessment": {
@@ -318,25 +318,25 @@
     "audit_preview_events": [
       {
         "event_type": "ASSESSMENT_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.386831+00:00",
+        "timestamp": "2026-08-27T13:51:12.165852+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "EXPLANATION_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.386831+00:00",
+        "timestamp": "2026-08-27T13:51:12.165852+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "REVIEW_CASE_RECOMMENDED",
-        "timestamp": "2026-08-24T07:05:21.386831+00:00",
+        "timestamp": "2026-08-27T13:51:12.165852+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "EVIDENCE_REQUEST_RECOMMENDED",
-        "timestamp": "2026-08-24T07:05:21.386831+00:00",
+        "timestamp": "2026-08-27T13:51:12.165852+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       }
@@ -347,7 +347,7 @@
       "case_preview_id": "case_preview_51376c9cafa69de2",
       "merchant_id": "merchant_demo_0010",
       "week_start": "2025-11-17",
-      "generated_at": "2026-08-24T07:05:21.399085+00:00",
+      "generated_at": "2026-08-27T13:51:12.174133+00:00",
       "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
     },
     "assessment": {
@@ -476,25 +476,25 @@
     "audit_preview_events": [
       {
         "event_type": "ASSESSMENT_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.399085+00:00",
+        "timestamp": "2026-08-27T13:51:12.174133+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "EXPLANATION_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.399085+00:00",
+        "timestamp": "2026-08-27T13:51:12.174133+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "REVIEW_CASE_RECOMMENDED",
-        "timestamp": "2026-08-24T07:05:21.399085+00:00",
+        "timestamp": "2026-08-27T13:51:12.174133+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "MANUAL_REVIEW_RECOMMENDED",
-        "timestamp": "2026-08-24T07:05:21.399085+00:00",
+        "timestamp": "2026-08-27T13:51:12.174133+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       }
@@ -505,7 +505,7 @@
       "case_preview_id": "case_preview_99e078e8f5658282",
       "merchant_id": "merchant_demo_0007",
       "week_start": "2025-12-08",
-      "generated_at": "2026-08-24T07:05:21.412337+00:00",
+      "generated_at": "2026-08-27T13:51:12.181800+00:00",
       "synthetic_data_notice": "This case packet is generated from synthetic, demonstration-only data. It does not describe a real merchant, real transaction, or confirmed real-world outcome."
     },
     "assessment": {
@@ -580,19 +580,19 @@
     "audit_preview_events": [
       {
         "event_type": "ASSESSMENT_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.412337+00:00",
+        "timestamp": "2026-08-27T13:51:12.181800+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "EXPLANATION_GENERATED",
-        "timestamp": "2026-08-24T07:05:21.412337+00:00",
+        "timestamp": "2026-08-27T13:51:12.181800+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       },
       {
         "event_type": "REVIEW_CASE_RECOMMENDED",
-        "timestamp": "2026-08-24T07:05:21.412337+00:00",
+        "timestamp": "2026-08-27T13:51:12.181800+00:00",
         "preview_only": true,
         "note": "Preview event only -- not persisted to any database or audit log in this milestone."
       }

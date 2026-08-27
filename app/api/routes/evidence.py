@@ -11,7 +11,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_db, raise_api_error
+from app.api.dependencies import get_db, raise_api_error, require_role
+from app.db.models import User
+from app.db.repositories import get_case
 from app.schemas.api_responses import AuditEventResponse, ErrorCode, EvidenceSubmissionRequestBody, EvidenceSubmissionResponse
 from app.services.audit_service import _assert_payload_is_safe
 from app.services.case_service import CaseNotFoundError, InvalidTransitionError
@@ -21,13 +23,23 @@ router = APIRouter(tags=["evidence"])
 
 
 @router.post("/cases/{case_id}/evidence", response_model=EvidenceSubmissionResponse)
-def post_evidence_route(case_id: str, body: EvidenceSubmissionRequestBody, db: Session = Depends(get_db)) -> EvidenceSubmissionResponse:
-    if not body.merchant_actor_id or not body.merchant_actor_id.strip():
-        raise_api_error(422, ErrorCode.VALIDATION_ERROR, "merchant_actor_id must not be empty.")
+def post_evidence_route(
+    case_id: str,
+    body: EvidenceSubmissionRequestBody,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role("merchant")),
+) -> EvidenceSubmissionResponse:
+    case = get_case(db, case_id)
+    if case is None:
+        raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
+    if case.merchant_id != user.merchant_id:
+        # 404, not 403: a merchant gets no signal that a case belonging to
+        # a different merchant even exists.
+        raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
 
     try:
         evidence, audit_event = submit_evidence(
-            db, case_id, body.merchant_explanation_text, body.evidence_references, actor_id=body.merchant_actor_id,
+            db, case_id, body.merchant_explanation_text, body.evidence_references, actor_id=user.actor_id,
         )
     except CaseNotFoundError:
         raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")

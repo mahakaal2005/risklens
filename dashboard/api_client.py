@@ -46,14 +46,16 @@ class ClearRiskAPIClient:
     """Thin wrapper around the FastAPI backend. Every method returns a
     plain dict (already-validated JSON) or raises DashboardAPIError."""
 
-    def __init__(self, base_url: str | None = None, timeout: float = DEFAULT_TIMEOUT_SECONDS):
+    def __init__(self, base_url: str | None = None, timeout: float = DEFAULT_TIMEOUT_SECONDS, session_token: str | None = None):
         self.base_url = (base_url or get_base_url()).rstrip("/")
         self.timeout = timeout
+        self.session_token = session_token
 
     def _request(self, method: str, path: str, json_body: dict | None = None, params: dict | None = None) -> dict:
         url = f"{self.base_url}{path}"
+        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
         try:
-            response = httpx.request(method, url, json=json_body, params=params, timeout=self.timeout)
+            response = httpx.request(method, url, json=json_body, params=params, timeout=self.timeout, headers=headers)
         except httpx.TimeoutException as exc:
             raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
         except httpx.ConnectError as exc:
@@ -90,6 +92,23 @@ class ClearRiskAPIClient:
     def health(self) -> dict:
         return self._request("GET", "/health")
 
+    def login(self, username: str, password: str) -> dict:
+        """Logs in and stores the returned session token on this client
+        instance so every subsequent call is authenticated. Returns the
+        full login response (role, actor_id, display_name, etc.) for the
+        caller to store in Streamlit session state."""
+        body = self._require_notice(self._request("POST", "/auth/login", json_body={"username": username, "password": password}))
+        self.session_token = body["session_token"]
+        return body
+
+    def logout(self) -> None:
+        if self.session_token:
+            try:
+                self._request("POST", "/auth/logout")
+            except DashboardAPIError:
+                pass  # best-effort -- the session will also just expire on its own
+        self.session_token = None
+
     def get_metrics(self) -> dict:
         # MetricsResponse always includes synthetic_data_notice, even in the
         # not_available case, so this check applies unconditionally.
@@ -120,10 +139,12 @@ class ClearRiskAPIClient:
 
     # -- Write endpoints ---------------------------------------------------
 
-    def submit_review_action(self, case_id: str, action: str, reviewer_actor_id: str, reviewer_note: str) -> dict:
+    def submit_review_action(self, case_id: str, action: str, reviewer_note: str) -> dict:
+        """No actor-id parameter: the reviewer's identity is derived
+        server-side from this client's session token, never sent by the
+        caller -- see docs/PHASE_2_AUTH_DESIGN.md Section 6."""
         body = {
             "action": action,
-            "reviewer_actor_id": reviewer_actor_id,
             "reviewer_note": reviewer_note,
         }
         return self._require_notice(self._request("POST", f"/cases/{case_id}/review-actions", json_body=body))
@@ -131,12 +152,13 @@ class ClearRiskAPIClient:
     def submit_evidence(
         self,
         case_id: str,
-        merchant_actor_id: str,
         merchant_explanation_text: str,
         evidence_references: list[str],
     ) -> dict:
+        """No actor-id parameter: the merchant's identity is derived
+        server-side from this client's session token, never sent by the
+        caller -- see docs/PHASE_2_AUTH_DESIGN.md Section 6."""
         body = {
-            "merchant_actor_id": merchant_actor_id,
             "merchant_explanation_text": merchant_explanation_text,
             "evidence_references": evidence_references,
         }

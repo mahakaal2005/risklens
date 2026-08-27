@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.api.routes import cases, evidence, health, metrics
+from app.api.routes import auth, cases, evidence, health, metrics
 from app.schemas.api_responses import SYNTHETIC_DATA_NOTICE, ErrorCode
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app = FastAPI(
 )
 
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(cases.router)
 app.include_router(evidence.router)
 app.include_router(metrics.router)

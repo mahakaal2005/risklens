@@ -31,9 +31,13 @@ def list_cases(
     intensity: str | None = None,
     limit: int = 50,
     offset: int = 0,
+    merchant_id: str | None = None,
 ) -> tuple[list[ReviewCase], int]:
     """Read-only, filtered, paginated case listing. Pure data access -- no
-    business/workflow logic (that stays in app/services/case_service.py)."""
+    business/workflow logic (that stays in app/services/case_service.py).
+    merchant_id restricts results to a single merchant -- used to enforce a
+    merchant-role user's read scope (docs/PHASE_2_AUTH_DESIGN.md Section 5),
+    not a general filter offered to every caller."""
     filters = []
     if status is not None:
         filters.append(ReviewCase.case_status == status)
@@ -41,6 +45,8 @@ def list_cases(
         filters.append(ReviewCase.recommendation == recommendation)
     if intensity is not None:
         filters.append(ReviewCase.risk_signal_intensity == intensity)
+    if merchant_id is not None:
+        filters.append(ReviewCase.merchant_id == merchant_id)
 
     count_stmt = select(func.count()).select_from(ReviewCase)
     if filters:

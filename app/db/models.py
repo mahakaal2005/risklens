@@ -22,6 +22,45 @@ def _utcnow() -> dt.datetime:
     return dt.datetime.now(dt.timezone.utc)
 
 
+class User(Base):
+    """Local demo accounts only -- see docs/PHASE_2_AUTH_DESIGN.md. Not real
+    people; seeded by scripts/seed_demo_users.py. Password hashing is a
+    stdlib pbkdf2_hmac KDF, explicitly documented as adequate for this local
+    prototype and not a claim of production password-security compliance.
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    password_salt: Mapped[str] = mapped_column(String, nullable=False)
+
+    role: Mapped[str] = mapped_column(String, nullable=False)  # "reviewer" | "merchant" | "risk_manager"
+    actor_id: Mapped[str] = mapped_column(String, nullable=False)  # recorded in audit events
+    merchant_id: Mapped[str | None] = mapped_column(String, nullable=True)  # only set for role="merchant"
+    display_name: Mapped[str] = mapped_column(String, nullable=False)
+
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    sessions: Mapped[list["UserSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
+
+class UserSession(Base):
+    """Opaque server-side session token, not a JWT -- simpler and directly
+    revocable for a local single-operator demo. See
+    docs/PHASE_2_AUTH_DESIGN.md Section 4."""
+
+    __tablename__ = "sessions"
+
+    token: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    expires_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="sessions")
+
+
 class ReviewCase(Base):
     __tablename__ = "review_cases"
 

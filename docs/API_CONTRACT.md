@@ -1,14 +1,46 @@
 # API Contract — ClearRisk Recover
 
-Status: Implemented, Milestone 6. **Every endpoint in this API is a local synthetic-data demonstration only.** There is no authentication, no real payment gateway connection, and no endpoint that freezes funds, holds settlement, bans a merchant, terminates an account, rejects a payment, processes a payment, issues a refund, or transfers funds — none of these exist anywhere in this codebase, verified by `tests/test_api_cases.py::test_no_route_or_response_contains_prohibited_enforcement_words`, which scans the live OpenAPI schema for these terms.
+Status: Implemented, Milestone 6, with local-demo authentication added in Phase 2 (see `docs/PHASE_2_AUTH_DESIGN.md` and `docs/MILESTONE_9_AUTH.md`). **Every endpoint in this API is a local synthetic-data demonstration only.** There is no production-grade auth (no MFA, no password reset, no login rate limiting, no external identity provider), no real payment gateway connection, and no endpoint that freezes funds, holds settlement, bans a merchant, terminates an account, rejects a payment, processes a payment, issues a refund, or transfers funds — none of these exist anywhere in this codebase, verified by `tests/test_api_cases.py::test_no_route_or_response_contains_prohibited_enforcement_words`, which scans the live OpenAPI schema for these terms.
 
 Base URL (local): `http://127.0.0.1:8000`. Interactive docs: `http://127.0.0.1:8000/docs`.
 
 ---
 
+## Authentication
+
+Every endpoint below except `GET /health`, `POST /auth/login`, and `POST /auth/logout` requires an `Authorization: Bearer <session_token>` header. Missing/unknown/expired token → **401** `AUTHENTICATION_REQUIRED`.
+
+### POST /auth/login
+
+**Request:** `{"username": "...", "password": "..."}`
+
+**Response 200:** `{"session_token": "...", "role": "reviewer"|"merchant"|"risk_manager", "actor_id": "...", "display_name": "...", "merchant_id": null|"...", "expires_at": "...", "synthetic_data_notice": "..."}`
+
+**Response 401** on wrong username or password — the message is always the identical generic string `"Invalid username or password."`, never revealing which part was wrong.
+
+### POST /auth/logout
+
+Invalidates the caller's session token, if any. Always returns **200** `{"status": "logged_out"}`, even with no/invalid token (safe no-op).
+
+### GET /auth/me
+
+Returns the current session's identity: `{"role": "...", "actor_id": "...", "display_name": "...", "merchant_id": null|"...", "synthetic_data_notice": "..."}`. **401** if unauthenticated.
+
+### Roles and permissions
+
+| Role | Permissions |
+|---|---|
+| `reviewer` | All reviewer actions (`POST /cases/{id}/review-actions`) on any case. Read access to all cases. |
+| `merchant` | `POST /cases/{id}/evidence` only for cases whose `merchant_id` matches their own. Read access filtered to their own `merchant_id` only — a case belonging to another merchant returns **404**, not 403 (no signal that it exists). |
+| `risk_manager` | Read-only: `GET /metrics`, `GET /cases`, `GET /cases/{id}`, `GET /cases/{id}/audit-events`. No write endpoint accepts this role. |
+
+Accounts are seeded, fixed local-demo identities via `scripts/seed_demo_users.py` — not real people, same spirit as `merchant_demo_001` elsewhere in this codebase.
+
+---
+
 ## GET /health
 
-Returns service status. No parameters.
+Returns service status. No parameters. **Does not require authentication** (the dashboard needs it to show connection status before login).
 
 **Response 200:**
 ```json
@@ -23,7 +55,7 @@ Returns service status. No parameters.
 
 ## GET /cases
 
-Paginated, filterable list of persisted review cases.
+Paginated, filterable list of persisted review cases. Requires authentication (any role). A `merchant`-role caller sees only cases matching their own `merchant_id`; `reviewer` and `risk_manager` see all cases.
 
 **Query parameters (all optional):**
 | Param | Type | Constraint |
@@ -61,18 +93,18 @@ Sorted deterministically by `created_at` descending, then `case_id` ascending. N
 
 ## GET /cases/{case_id}
 
-Safe full case detail.
+Safe full case detail. Requires authentication. A `merchant`-role caller reading a case belonging to a different merchant gets the same 404 as an unknown case_id.
 
 **Response 200:** case_id, merchant_id, week_start, case_status, risk_signal_intensity, recommendation, policy_explanation, analyst_summary, merchant_safe_explanation, triggered_rules, evidence_checklist, model_version, rules_version, created_at, updated_at, resolved_at, final_outcome, reviewer_note, evidence_submissions (summary only: evidence_id, submitted_at, status, evidence_references — no audit events here), synthetic_data_notice.
 
-**Response 404** (unknown case_id):
+**Response 404** (unknown case_id, or a merchant-role caller reading a case that isn't theirs):
 ```json
 {"error": {"code": "CASE_NOT_FOUND", "message": "No review case exists for the provided case ID.", "synthetic_data_notice": "Local synthetic-data demonstration only."}}
 ```
 
 ## GET /cases/{case_id}/audit-events
 
-Ordered audit timeline (ascending by `event_sequence_number`).
+Ordered audit timeline (ascending by `event_sequence_number`). Requires authentication; same merchant-scoping 404 behavior as `GET /cases/{case_id}`.
 
 **Response 200:**
 ```json
@@ -88,15 +120,19 @@ Payloads are re-checked against the existing safety guard (`app/services/audit_s
 
 ## POST /cases/{case_id}/review-actions
 
+Requires the `reviewer` role — **403** `FORBIDDEN` for any other role. The reviewer identity is derived entirely from the session token, never from the request body.
+
 **Request:**
 ```json
-{"action": "REQUEST_EVIDENCE", "reviewer_actor_id": "analyst_demo_001", "reviewer_note": "Please provide fulfilment proof and refund records."}
+{"action": "REQUEST_EVIDENCE", "reviewer_note": "Please provide fulfilment proof and refund records."}
 ```
+
+No `reviewer_actor_id` field — removed in Phase 2 (was client-supplied and unverifiable; see `docs/PHASE_2_AUTH_DESIGN.md` Section 6).
 
 Allowed `action` values: `CLEAR_CASE`, `MARK_FALSE_POSITIVE`, `REQUEST_EVIDENCE`, `MARK_OPERATIONAL_ISSUE`, `ESCALATE_CASE`, `MARK_INCONCLUSIVE`, `START_REVIEW`.
 
 - Unknown/invalid `action` value → **422** (Pydantic enum validation, automatic).
-- Blank `reviewer_actor_id` or `reviewer_note` → **422** `VALIDATION_ERROR`.
+- Blank `reviewer_note` → **422** `VALIDATION_ERROR`.
 - Unknown `case_id` → **404** `CASE_NOT_FOUND`.
 - Invalid state transition (e.g. `START_REVIEW` from `OPEN`) → **409** `INVALID_CASE_TRANSITION`, no mutation.
 - Success → **200**, `{"case": <CaseDetailResponse>, "new_audit_events": [...], "synthetic_data_notice": "..."}`.
@@ -105,26 +141,29 @@ Every call is routed through `app/services/case_service.py::apply_reviewer_actio
 
 ## POST /cases/{case_id}/evidence
 
+Requires the `merchant` role — **403** `FORBIDDEN` for any other role. Requires the case's `merchant_id` to match the caller's own `merchant_id` — otherwise **404** (not 403; no signal that the case exists). The merchant identity is derived entirely from the session token, never from the request body.
+
 **Request:**
 ```json
 {
-  "merchant_actor_id": "merchant_demo_001",
   "merchant_explanation_text": "A seasonal sale increased returns. Refunds were processed within policy.",
   "evidence_references": ["refund_records_demo_001.pdf", "seasonal_sale_summary_demo_001.txt"]
 }
 ```
 
+No `merchant_actor_id` field — removed in Phase 2 (was client-supplied and unverifiable; see `docs/PHASE_2_AUTH_DESIGN.md` Section 6).
+
 - Only accepted while the case is in `EVIDENCE_REQUESTED` status; otherwise **409** `INVALID_CASE_TRANSITION`.
 - Invalid evidence reference (path traversal, real URL, shell metacharacters, blank, >100 chars, >5 items) → **422** `INVALID_EVIDENCE_REFERENCE`.
 - Blank `merchant_explanation_text` → **422** `INVALID_EVIDENCE_REFERENCE`.
-- Unknown case_id → **404** `CASE_NOT_FOUND`.
+- Unknown case_id, or a case belonging to a different merchant → **404** `CASE_NOT_FOUND`.
 - Success → **200**, `{"evidence_id": "...", "case_id": "...", "case_status": "EVIDENCE_SUBMITTED", "submitted_at": "...", "evidence_references": [...], "new_audit_event": {...}, "synthetic_data_notice": "..."}`.
 
 No real file upload or external URL retrieval exists anywhere — evidence references are validated strings only.
 
 ## GET /metrics
 
-Reads a previously saved evaluation-report artifact from `ml/artifacts/evaluation_report.json`. **Never retrains or re-scores during the request.**
+Requires authentication (any role). Reads a previously saved evaluation-report artifact from `ml/artifacts/evaluation_report.json`. **Never retrains or re-scores during the request.**
 
 **Response 200 (available):**
 ```json
@@ -173,6 +212,8 @@ Never returns a 500 for a missing artifact.
 | `METRICS_NOT_AVAILABLE` | 200 | When the persisted evaluation report is unavailable, `GET /metrics` returns HTTP 200 with `status = not_available` and `error_code = METRICS_NOT_AVAILABLE`. The response includes the local generation command and a synthetic-data notice. |
 | `METRICS_ARTIFACT_INVALID` | 200 | When the persisted evaluation report exists but is corrupt or fails schema/safety validation, `GET /metrics` returns HTTP 200 with `status = not_available` and `error_code = METRICS_ARTIFACT_INVALID`. The response includes the local generation command and a synthetic-data notice, and never the underlying parse error or file path. |
 | `INTERNAL_SAFE_ERROR` | 500 | Unhandled exception — no stack trace is ever returned |
+| `AUTHENTICATION_REQUIRED` | 401 | Missing, unknown, or expired session token; also returned by `POST /auth/login` on wrong credentials (generic message, never reveals which part was wrong) |
+| `FORBIDDEN` | 403 | Authenticated, but the caller's role does not permit this action (e.g. `merchant` calling `POST /cases/{id}/review-actions`, or `reviewer`/`risk_manager` calling `POST /cases/{id}/evidence`) |
 
 ## Non-existent enforcement endpoints (explicit negative list)
 

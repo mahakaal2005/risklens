@@ -11,8 +11,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.api.dependencies import get_db, raise_api_error
-from app.db.models import EvidenceSubmission, ReviewCase
+from app.api.dependencies import get_current_user, get_db, raise_api_error, require_role
+from app.db.models import EvidenceSubmission, ReviewCase, User
 from app.db.repositories import get_audit_events_for_case, get_case, list_cases
 from app.schemas.api_responses import (
     AuditEventResponse,
@@ -93,6 +93,16 @@ def _to_audit_event_response(event) -> AuditEventResponse:
     )
 
 
+def _enforce_merchant_scope(user: User, case: ReviewCase | None) -> None:
+    """A merchant-role user may only read cases belonging to their own
+    merchant_id -- see docs/PHASE_2_AUTH_DESIGN.md Section 5. Reviewer and
+    risk_manager roles are unrestricted readers. Returns a 404 (not 403)
+    for a merchant reading someone else's case, so the response gives no
+    signal about whether that case exists at all."""
+    if user.role == "merchant" and case is not None and case.merchant_id != user.merchant_id:
+        raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
+
+
 @router.get("/cases", response_model=CaseListResponse)
 def list_cases_route(
     status: str | None = Query(default=None),
@@ -101,32 +111,44 @@ def list_cases_route(
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ) -> CaseListResponse:
-    cases, total = list_cases(db, status=status, recommendation=recommendation, intensity=intensity, limit=limit, offset=offset)
+    merchant_scope = user.merchant_id if user.role == "merchant" else None
+    cases, total = list_cases(
+        db, status=status, recommendation=recommendation, intensity=intensity, limit=limit, offset=offset,
+        merchant_id=merchant_scope,
+    )
     return CaseListResponse(items=[_to_case_summary(c) for c in cases], limit=limit, offset=offset, total=total)
 
 
 @router.get("/cases/{case_id}", response_model=CaseDetailResponse)
-def get_case_detail_route(case_id: str, db: Session = Depends(get_db)) -> CaseDetailResponse:
+def get_case_detail_route(case_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> CaseDetailResponse:
     case = get_case(db, case_id)
     if case is None:
         raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
+    _enforce_merchant_scope(user, case)
     return _to_case_detail(case)
 
 
 @router.get("/cases/{case_id}/audit-events", response_model=AuditTimelineResponse)
-def get_case_audit_events_route(case_id: str, db: Session = Depends(get_db)) -> AuditTimelineResponse:
+def get_case_audit_events_route(
+    case_id: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> AuditTimelineResponse:
     case = get_case(db, case_id)
     if case is None:
         raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
+    _enforce_merchant_scope(user, case)
     events = get_audit_events_for_case(db, case_id)
     return AuditTimelineResponse(case_id=case_id, events=[_to_audit_event_response(e) for e in events])
 
 
 @router.post("/cases/{case_id}/review-actions", response_model=ReviewActionResponse)
-def post_review_action_route(case_id: str, body: ReviewActionRequest, db: Session = Depends(get_db)) -> ReviewActionResponse:
-    if not body.reviewer_actor_id or not body.reviewer_actor_id.strip():
-        raise_api_error(422, ErrorCode.VALIDATION_ERROR, "reviewer_actor_id must not be empty.")
+def post_review_action_route(
+    case_id: str,
+    body: ReviewActionRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role("reviewer")),
+) -> ReviewActionResponse:
     if not body.reviewer_note or not body.reviewer_note.strip():
         raise_api_error(422, ErrorCode.VALIDATION_ERROR, "reviewer_note must not be empty.")
 
@@ -134,9 +156,9 @@ def post_review_action_route(case_id: str, body: ReviewActionRequest, db: Sessio
 
     try:
         if body.action.value == "START_REVIEW":
-            case = start_review(db, case_id, reviewer_actor=body.reviewer_actor_id)
+            case = start_review(db, case_id, reviewer_actor=user.actor_id)
         else:
-            case = apply_reviewer_action(db, case_id, body.action.value, body.reviewer_note, reviewer_actor=body.reviewer_actor_id)
+            case = apply_reviewer_action(db, case_id, body.action.value, body.reviewer_note, reviewer_actor=user.actor_id)
     except CaseNotFoundError:
         raise_api_error(404, ErrorCode.CASE_NOT_FOUND, "No review case exists for the provided case ID.")
     except InvalidTransitionError as exc:
