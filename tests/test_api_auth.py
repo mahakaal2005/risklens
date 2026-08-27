@@ -8,7 +8,15 @@ from fastapi.testclient import TestClient
 from app.api.dependencies import get_db
 from app.db.database import create_db_engine, init_db, make_session_factory
 from app.main import app
+from app.services.rate_limit import reset_all as reset_rate_limits
 from tests.conftest import DEMO_PASSWORD, make_bearer_headers
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    reset_rate_limits()
+    yield
+    reset_rate_limits()
 
 
 @pytest.fixture()
@@ -107,3 +115,33 @@ def test_logout_invalidates_the_session_token(client, session_factory):
 def test_logout_without_a_token_is_a_safe_no_op(client, session_factory):
     response = client.post("/auth/logout")
     assert response.status_code == 200
+
+
+def test_login_is_rate_limited_after_five_attempts_per_client(client, session_factory):
+    _seed_reviewer(session_factory)
+    for _ in range(5):
+        response = client.post("/auth/login", json={"username": "reviewer_login_test", "password": "wrong"})
+        assert response.status_code == 401
+
+    sixth = client.post("/auth/login", json={"username": "reviewer_login_test", "password": "wrong"})
+    assert sixth.status_code == 429
+    assert sixth.json()["error"]["code"] == "RATE_LIMITED"
+
+    # Even a correct password is rejected once the window's attempt budget
+    # is spent -- the limit is per-client, not per-outcome.
+    still_limited = client.post("/auth/login", json={"username": "reviewer_login_test", "password": DEMO_PASSWORD})
+    assert still_limited.status_code == 429
+
+
+def test_security_headers_present_on_a_normal_response(client, session_factory):
+    response = client.get("/health")
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert response.headers["content-security-policy"] == "default-src 'self'"
+
+
+def test_docs_route_is_exempt_from_strict_csp_but_keeps_other_headers(client, session_factory):
+    response = client.get("/docs")
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert response.headers["x-frame-options"] == "DENY"
+    assert "content-security-policy" not in response.headers

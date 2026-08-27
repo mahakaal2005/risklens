@@ -90,10 +90,22 @@
    session; the actor recorded in the audit log is derived from the
    session, never from client-supplied input) -- real access control for
    this prototype, not decoration, but still local-only.
+ - `POST /auth/login` is rate limited: 5 attempts/minute per client IP,
+   in-memory, single-process (`app/services/rate_limit.py`) -- resets on
+   restart and is not shared across workers/replicas, so this is a
+   local-demo mitigation, not a production rate-limiting solution.
+ - Every response carries `X-Content-Type-Options: nosniff` and
+   `X-Frame-Options: DENY`; all routes except `/docs`/`/redoc`/`/openapi.json`
+   additionally carry `Content-Security-Policy: default-src 'self'` (those
+   three are exempted because Swagger UI loads its JS/CSS from a public CDN).
+   `Strict-Transport-Security` is deliberately omitted -- this API serves
+   plain HTTP on localhost, where HSTS would be meaningless rather than
+   protective.
 
  ## Not implemented
- - Production-grade authentication hardening (MFA, password reset, rate
-   limiting, external identity provider -- see above).
+ - Production-grade authentication hardening (MFA, password reset,
+   distributed/production-grade rate limiting, external identity provider --
+   see above for what's already implemented at local-demo grade).
  - Encryption at rest/in transit configuration.
  - Key management.
  - Secure secrets vault.

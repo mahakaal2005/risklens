@@ -66,15 +66,25 @@ Three fixed, seeded accounts — not real people, same spirit as `merchant_demo_
 
 Passwords are randomly generated (`secrets.token_urlsafe(9)`) and printed to the terminal once on first run; nothing is written to any file. Re-running the script for an already-seeded username is a safe no-op (reported, not duplicated or reset).
 
-## 8. Tests
+## 8. Security-checklist pass (added after initial implementation)
+
+Per the project's standing 5-security-checks requirement, a follow-up pass against this milestone's new surface found and fixed two gaps:
+
+- **No rate limiting on `POST /auth/login`** — a real login endpoint now exists, so brute-force attempts against demo credentials were unbounded. Fixed with `app/services/rate_limit.py`, a minimal in-memory per-client-IP sliding-window limiter (5 attempts/minute) — single-process, resets on restart, not a distributed production rate limiter, but adequate for this local demo. Exceeding the limit returns **429** `RATE_LIMITED`.
+- **No security-headers middleware** — flagged in an earlier ad-hoc security pass but never fixed until now. `app/main.py` gained a middleware adding `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY` to every response, plus `Content-Security-Policy: default-src 'self'` on all routes except `/docs`/`/redoc`/`/openapi.json` (Swagger UI loads its JS/CSS from a public CDN, so a strict same-origin CSP would silently break the interactive docs page). `Strict-Transport-Security` is deliberately omitted — this API serves plain HTTP on localhost, and HSTS over an insecure connection is meaningless rather than protective.
+
+Everything else checked against the 5-checklist categories (secrets, PII flow, debug endpoints, IDOR, JWT/session handling, input validation, privilege escalation, internal exposure) was already correctly handled by the initial implementation — see Sections 3-7 above.
+
+## 9. Tests
 
 - `tests/test_auth_service.py` (12 tests) — hashing determinism/salting, `authenticate()`'s generic-message behavior for both wrong-password and unknown-username, session creation/expiry/invalidation.
-- `tests/test_api_auth.py` (7 tests) — `POST /auth/login` success/failure, `GET /auth/me`, `POST /auth/logout` (including as a safe no-op with no token).
+- `tests/test_api_auth.py` (11 tests) — `POST /auth/login` success/failure, `GET /auth/me`, `POST /auth/logout` (including as a safe no-op with no token), login rate-limiting (429 after 5 attempts/minute), and security-header presence/CSP-exemption for `/docs`.
+- `tests/test_rate_limit.py` (4 tests) — the in-memory sliding-window limiter itself: under-limit, at-limit, independent keys, window expiry.
 - `tests/test_api_cases.py`, `test_api_evidence.py`, `test_api_metrics.py` — updated to authenticate via a shared `tests/conftest.py::make_bearer_headers()` helper; added explicit tests for unauthenticated rejection, cross-merchant evidence-submission rejection (404), and reviewer-role evidence-submission rejection (403).
 - `tests/test_dashboard_api_client.py` — updated for the new `headers` parameter on every mocked `httpx.request` call; added tests for `login()` storing and attaching the token, and `logout()` clearing it.
-- Full suite: **402 passed** (up from 379 before this milestone).
+- Full suite: **409 passed** (up from 379 at the Phase 1 baseline).
 
-## 9. How to run
+## 10. How to run
 
 ```bash
 rm -f clearrisk_recover.db
@@ -86,7 +96,7 @@ streamlit run dashboard/streamlit_app.py  # terminal 2
 
 Open [http://localhost:8501](http://localhost:8501) and sign in with any of the three printed accounts.
 
-## 10. Known limitations (not fabricated, flagged instead)
+## 11. Known limitations (not fabricated, flagged instead)
 
 - No MFA, no password reset flow, no login rate limiting/lockout, no OAuth/SSO, no external identity provider.
 - Sessions are opaque server-side tokens with a fixed 12-hour lifetime — a local demo session, not a production refresh-token scheme.

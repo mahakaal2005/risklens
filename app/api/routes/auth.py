@@ -6,7 +6,7 @@ SECURITY.md. Demo accounts only, seeded by scripts/seed_demo_users.py.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -15,13 +15,27 @@ from app.db.models import User
 from app.schemas.api_responses import ErrorCode
 from app.schemas.auth import CurrentUserResponse, LoginRequest, LoginResponse
 from app.services.auth_service import AuthError, authenticate, create_session, invalidate_session
+from app.services.rate_limit import RateLimitExceededError, check_rate_limit
 
 router = APIRouter(tags=["auth"])
 _bearer_scheme = HTTPBearer(auto_error=False)
 
+# Per the project's standing 5-security-checks requirement (Prompt 3 item 5):
+# authentication endpoints must be rate limited. In-memory, per-client-IP,
+# sliding window -- adequate for this local single-process demo, not a
+# distributed production rate limiter.
+LOGIN_MAX_ATTEMPTS = 5
+LOGIN_WINDOW_SECONDS = 60.0
+
 
 @router.post("/auth/login", response_model=LoginResponse)
-def login_route(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
+def login_route(body: LoginRequest, request: Request, db: Session = Depends(get_db)) -> LoginResponse:
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        check_rate_limit(f"login:{client_ip}", LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_SECONDS)
+    except RateLimitExceededError:
+        raise_api_error(429, ErrorCode.RATE_LIMITED, "Too many login attempts. Please wait a minute and try again.")
+
     try:
         user = authenticate(db, body.username, body.password)
     except AuthError as exc:
