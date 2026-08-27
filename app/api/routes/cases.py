@@ -49,6 +49,7 @@ def _to_case_summary(case: ReviewCase) -> CaseSummary:
         sla_deadline=sla["sla_deadline"],
         hours_until_deadline=sla["hours_until_deadline"],
         sla_breached=sla["sla_breached"],
+        synthetic_data_notice=case.synthetic_data_notice,
     )
 
 
@@ -99,6 +100,7 @@ def _to_case_detail(case: ReviewCase) -> CaseDetailResponse:
         sla_deadline=sla["sla_deadline"],
         hours_until_deadline=sla["hours_until_deadline"],
         sla_breached=sla["sla_breached"],
+        synthetic_data_notice=case.synthetic_data_notice,
     )
 
 

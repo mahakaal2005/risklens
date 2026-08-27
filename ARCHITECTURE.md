@@ -99,7 +99,7 @@
 
 | Component | Responsibility | Phase 1 status | Phase 2/3 need |
 |---|---|---|---|
-| Synthetic data generator | Creates labelled, non-identifying merchant-week demo data from a 5-state latent simulation | Planned for Phase 1 MVP | Replace/augment only with authorized, de-identified data |
+| Synthetic data generator | Creates labelled, non-identifying merchant-week demo data from a 5-state latent simulation | Planned for Phase 1 MVP | **External anonymized CSV import: implemented, Phase 2** (`ml/external_data_import.py` + `scripts/import_merchant_csv.py` -- exact-schema validation, PII/prohibited-column rejection, scores through the existing rules+model pipeline; exercised with a labeled synthetic fixture, no willing merchant yet; see docs/PHASE_2_EXTERNAL_DATA_IMPORT_DESIGN.md) |
 | Feature builder | Produces refund-rate trend, chargeback-rate trend, volume trend, delivery-evidence coverage, support-ticket trend features per merchant-week | Planned for Phase 1 MVP | Extend for gateway/webhook-shaped event fields; add drift monitoring (Evidently) |
 | Rules engine | Evaluates documented refund/chargeback-trend rules | Planned for Phase 1 MVP | Policy management, approvals, version governance |
 | ML model (Logistic Regression) | Produces interpretable `label_high_loss_next_30d` probability | Planned for Phase 1 MVP | **Feedback/retraining workflow: implemented, Phase 2** (`ml/retrain_with_feedback.py` -- manually triggered only, reviewer FALSE_POSITIVE/CONFIRMED_RISK resolutions correct training-split labels only, held-out test split never touched; see docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md); model validation/monitoring/champion-challenger remain unbuilt |

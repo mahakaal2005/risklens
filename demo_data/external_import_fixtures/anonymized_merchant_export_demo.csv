@@ -1,0 +1,4 @@
+merchant_id,week_start,merchant_category,merchant_age_days,transaction_count_30d,transaction_volume_30d,transaction_volume_previous_30d,transaction_volume_change_30d,refund_count_30d,refund_rate_30d,refund_rate_previous_30d,refund_rate_change_30d,chargeback_count_30d,chargeback_rate_30d,chargeback_rate_previous_30d,chargeback_rate_change_30d,top_dispute_reason_category,delivery_evidence_coverage,support_ticket_rate,average_support_resolution_time_hours,previous_review_outcome
+ext_merchant_9001,2025-06-02,electronics,900,420,84000.0,82000.0,2000.0,8,0.019,0.018,0.001,1,0.0024,0.0022,0.0002,other,0.95,0.01,6.0,none
+ext_merchant_9002,2025-06-09,apparel,220,260,52000.0,51000.0,1000.0,42,0.16,0.05,0.11,14,0.054,0.012,0.042,item_not_as_described,0.35,0.08,60.0,none
+ext_merchant_9003,2025-06-16,food_delivery,500,900,45000.0,44500.0,500.0,90,0.1,0.04,0.06,3,0.0033,0.003,0.0003,not_received,0.55,0.05,30.0,operational_issue

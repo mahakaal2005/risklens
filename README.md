@@ -55,7 +55,8 @@
  python3 scripts/demo_case_workflow.py       # walks two seeded cases through the full reviewer/evidence workflow
  python3 scripts/export_feedback_labels.py   # exports FALSE_POSITIVE/CONFIRMED_RISK resolutions -> ml/artifacts/feedback_label_overrides.json
  python3 -m ml.retrain_with_feedback         # manually-triggered only; retrains + writes ml/artifacts/feedback_retrain_report.json
- python3 -m pytest tests/ -v                 # full test suite (454 tests as of the feedback retraining loop)
+ python3 scripts/import_merchant_csv.py      # validates + scores demo_data/external_import_fixtures/anonymized_merchant_export_demo.csv, persists real cases
+ python3 -m pytest tests/ -v                 # full test suite (474 tests -- Phase 2 complete)
  ```
 
  ### Running the API (local, synthetic-data demo only)
@@ -140,6 +141,7 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  - `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md` — real evidence-attachment file upload/download: validation layers, storage model, API/dashboard integration, known limitations
  - `docs/PHASE_2_REVIEW_SLA_DESIGN.md` — computed (not stored) review SLA and simulated in-app breach notification: thresholds, clock-stop behavior, dashboard integration
  - `docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md` — manually-triggered feedback retraining loop: label-correction rules, test-split-preservation guarantee, and a real end-to-end finding from live verification
+ - `docs/PHASE_2_EXTERNAL_DATA_IMPORT_DESIGN.md` — anonymized merchant-week CSV import: exact-schema validation, PII/prohibited-column rejection, and two real gaps found and fixed during live verification
 
  ## Status
 
@@ -153,19 +155,22 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  report served by `GET /metrics` (Milestone 7), and a local Streamlit dashboard over the
  same API (Milestone 8).
 
- **Phase 2 in progress:** local-demo authentication and three basic roles
- (`reviewer`/`merchant`/`risk_manager`, Milestone 9), real evidence-attachment
- file upload/download for the `merchant` role, a computed (not stored)
- review SLA with simulated in-app breach notifications, and a
- manually-triggered feedback retraining loop (reviewer FALSE_POSITIVE/
- CONFIRMED_RISK resolutions correct training-split labels only, held-out
- test split never touched) — implemented and tested (454 tests passing),
- on branch `phase-2-auth-design`. Not production-grade auth, no malware
- scanning on uploads, no real email/SMS/webhook notifications, no automatic
- retraining; see `docs/MILESTONE_9_AUTH.md`,
- `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`,
+ **Phase 2 complete (per `CLAUDE.md`'s roadmap):** local-demo authentication
+ and three basic roles (`reviewer`/`merchant`/`risk_manager`, Milestone 9),
+ real evidence-attachment file upload/download for the `merchant` role, a
+ computed (not stored) review SLA with simulated in-app breach
+ notifications, a manually-triggered feedback retraining loop (reviewer
+ FALSE_POSITIVE/CONFIRMED_RISK resolutions correct training-split labels
+ only, held-out test split never touched), and anonymized merchant-week CSV
+ import (exact-schema validation, PII/prohibited-column rejection, scored
+ through the existing rules+model pipeline) — implemented and tested (474
+ tests passing), on branch `phase-2-auth-design`. Not production-grade
+ auth, no malware scanning on uploads, no real email/SMS/webhook
+ notifications, no automatic retraining, no willing real merchant yet (the
+ import path is exercised with a labeled synthetic fixture); see
+ `docs/MILESTONE_9_AUTH.md`, `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`,
  `docs/PHASE_2_REVIEW_SLA_DESIGN.md`,
- `docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md`, and `SECURITY.md`. Real
- anonymized-data import remains the one unbuilt Phase 2 item. See
+ `docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md`,
+ `docs/PHASE_2_EXTERNAL_DATA_IMPORT_DESIGN.md`, and `SECURITY.md`. See
  `docs/IMPLEMENTATION_PLAN.md` for what remains beyond this local Phase 1
- prototype.
+ prototype (Phase 3: production integration requiring a gateway partner).
