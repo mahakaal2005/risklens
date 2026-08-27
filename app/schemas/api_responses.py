@@ -33,6 +33,7 @@ class AuditEventType(str, Enum):
     EVIDENCE_REQUEST_RECOMMENDED = "EVIDENCE_REQUEST_RECOMMENDED"
     MANUAL_REVIEW_RECOMMENDED = "MANUAL_REVIEW_RECOMMENDED"
     EVIDENCE_SUBMITTED = "EVIDENCE_SUBMITTED"
+    EVIDENCE_ATTACHMENT_UPLOADED = "EVIDENCE_ATTACHMENT_UPLOADED"
     REVIEW_STARTED = "REVIEW_STARTED"
     CASE_CLEARED = "CASE_CLEARED"
     CASE_MARKED_FALSE_POSITIVE = "CASE_MARKED_FALSE_POSITIVE"
@@ -109,11 +110,20 @@ class CaseListResponse(BaseModel):
     synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
 
 
+class EvidenceAttachmentSummary(BaseModel):
+    attachment_id: str
+    original_filename: str
+    content_type: str
+    size_bytes: int
+    uploaded_at: dt.datetime
+
+
 class EvidenceSubmissionSummary(BaseModel):
     evidence_id: str
     submitted_at: dt.datetime
     status: str
     evidence_references: list[str]
+    attachments: list[EvidenceAttachmentSummary] = []
 
 
 class CaseDetailResponse(BaseModel):
@@ -186,6 +196,12 @@ class EvidenceSubmissionResponse(BaseModel):
     case_status: CaseStatus
     submitted_at: dt.datetime
     evidence_references: list[str]
+    new_audit_event: AuditEventResponse
+    synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
+
+
+class AttachmentUploadResponse(BaseModel):
+    attachment: EvidenceAttachmentSummary
     new_audit_event: AuditEventResponse
     synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
 

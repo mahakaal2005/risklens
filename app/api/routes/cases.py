@@ -21,6 +21,7 @@ from app.schemas.api_responses import (
     CaseListResponse,
     CaseSummary,
     ErrorCode,
+    EvidenceAttachmentSummary,
     EvidenceSubmissionSummary,
     ReviewActionRequest,
     ReviewActionResponse,
@@ -51,6 +52,16 @@ def _to_evidence_summary(evidence: EvidenceSubmission) -> EvidenceSubmissionSumm
         submitted_at=evidence.submitted_at,
         status=evidence.status,
         evidence_references=evidence.evidence_references_json,
+        attachments=[
+            EvidenceAttachmentSummary(
+                attachment_id=a.attachment_id,
+                original_filename=a.original_filename,
+                content_type=a.content_type,
+                size_bytes=a.size_bytes,
+                uploaded_at=a.uploaded_at,
+            )
+            for a in evidence.attachments
+        ],
     )
 
 

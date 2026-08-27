@@ -135,6 +135,7 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  - `docs/RAZORPAY_ADAPTER.md` — the local Razorpay-shaped payment-event adapter: verified event names, generic event schema, merchant-week aggregation, and the fields it honestly cannot produce
  - `docs/PHASE_2_AUTH_DESIGN.md` — the approved Phase 2 authentication design (data model, role/permission mapping, the breaking-change decision)
  - `docs/MILESTONE_9_AUTH.md` — the as-built local-demo authentication report: bugs found, test results, how to run
+ - `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md` — real evidence-attachment file upload/download: validation layers, storage model, API/dashboard integration, known limitations
 
  ## Status
 
@@ -149,9 +150,11 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  same API (Milestone 8).
 
  **Phase 2 in progress:** local-demo authentication and three basic roles
- (`reviewer`/`merchant`/`risk_manager`), Milestone 9 — implemented and tested
- (402 tests passing), on branch `phase-2-auth-design`. Not production-grade
- auth; see `docs/MILESTONE_9_AUTH.md` and `SECURITY.md`. Real anonymized-data
- import, evidence attachments, review SLA, and a feedback/retraining loop
- remain unbuilt Phase 2 items. See `docs/IMPLEMENTATION_PLAN.md` for what
- remains beyond this local Phase 1 prototype.
+ (`reviewer`/`merchant`/`risk_manager`, Milestone 9), plus real evidence-attachment
+ file upload/download for the `merchant` role — implemented and tested
+ (430 tests passing), on branch `phase-2-auth-design`. Not production-grade
+ auth, no malware scanning on uploads; see `docs/MILESTONE_9_AUTH.md`,
+ `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`, and `SECURITY.md`. Real
+ anonymized-data import, review SLA, and a feedback/retraining loop remain
+ unbuilt Phase 2 items. See `docs/IMPLEMENTATION_PLAN.md` for what remains
+ beyond this local Phase 1 prototype.

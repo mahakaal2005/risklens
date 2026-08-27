@@ -159,7 +159,24 @@ No `merchant_actor_id` field — removed in Phase 2 (was client-supplied and unv
 - Unknown case_id, or a case belonging to a different merchant → **404** `CASE_NOT_FOUND`.
 - Success → **200**, `{"evidence_id": "...", "case_id": "...", "case_status": "EVIDENCE_SUBMITTED", "submitted_at": "...", "evidence_references": [...], "new_audit_event": {...}, "synthetic_data_notice": "..."}`.
 
-No real file upload or external URL retrieval exists anywhere — evidence references are validated strings only.
+No external URL retrieval exists anywhere. Evidence references remain validated strings only; a real file attachment (Phase 2) is a separate call — see below.
+
+## POST /cases/{case_id}/evidence/{evidence_id}/attachments
+
+Real file upload (Phase 2 — see `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`). Requires the `merchant` role and case ownership — same 404-not-403 rule as `POST /cases/{case_id}/evidence`. Multipart form body, single `file` field.
+
+- Allowed extensions: `pdf`, `txt`, `png`, `jpg`, `jpeg`. Others → **422** `INVALID_EVIDENCE_REFERENCE`.
+- Max size: 5 MB, enforced before the file is fully read into memory. Oversized → **422**.
+- Content is checked against a magic-byte signature for its claimed extension (e.g. a `.pdf` must start with `%PDF-`) — a mismatch (e.g. a renamed executable) → **422**, even if the extension and claimed `Content-Type` both look correct.
+- `Content-Type` is never trusted from the client — the stored and later-served content type is always derived from the validated extension.
+- Success → **200**, `{"attachment": {"attachment_id", "original_filename", "content_type", "size_bytes", "uploaded_at"}, "new_audit_event": {...}, "synthetic_data_notice": "..."}`.
+- The uploaded file is saved under a server-generated name; the client's filename is never used to construct a filesystem path (no path-traversal surface).
+
+## GET /cases/{case_id}/evidence/{evidence_id}/attachments/{attachment_id}
+
+Download. Any authenticated role — a `merchant`-role caller is scoped to their own `merchant_id`, same as every other case read. Returns the raw file bytes with `Content-Disposition: attachment; filename="..."` (the filename is sanitized against header-injection characters before being placed in the header). **404** for an unknown case/evidence/attachment ID, or a case/evidence that doesn't belong to the calling merchant.
+
+No malware/antivirus scanning exists on uploaded files — an explicit, documented limitation of this local demo (see `SECURITY.md`), not an oversight.
 
 ## GET /metrics
 

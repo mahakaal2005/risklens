@@ -31,9 +31,19 @@
  `DATA_DICTIONARY.md`); if a lower-level synthetic transaction stream is used internally
  to build merchant-week aggregates, it must follow the same synthetic-token rule.
 
- Merchant appeal evidence is a free-text field plus fake evidence filenames/URLs only
- (e.g. `invoice_demo_001.pdf`) — no real file upload pipeline exists or is planned for
- Phase 1.
+ Merchant appeal evidence is a free-text field plus evidence filename references. No
+ real file upload pipeline exists or is planned for Phase 1 -- Phase 1's evidence
+ references are simulated strings only (e.g. `invoice_demo_001.pdf`).
+
+ **Phase 2 adds a real file upload pipeline** (implemented -- see
+ `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`): local filesystem storage only
+ (`data/evidence_attachments/`, gitignored), server-generated filenames (the
+ client's filename is display-only, never used in a filesystem path),
+ extension allowlist (`pdf`/`txt`/`png`/`jpg`/`jpeg`), a 5 MB size cap enforced
+ at both the route and service layers, and a magic-byte content check so a
+ renamed executable cannot pass as an allowed type just because of its
+ filename. No malware/antivirus scanning exists -- an explicit, documented
+ limitation of this local demo, not an oversight.
 
  ### Simulated evidence restrictions (implemented, Milestone 5)
 
@@ -110,7 +120,9 @@
  - Key management.
  - Secure secrets vault.
  - Tenant isolation.
- - Secure evidence-file upload pipeline.
+ - Malware/antivirus scanning for uploaded evidence attachments (the upload
+   pipeline itself is implemented at local-demo grade -- see above; scanning
+   uploaded content is the specific gap).
  - Penetration testing.
  - Regulatory compliance certification.
  - Incident response/on-call operations.

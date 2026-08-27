@@ -88,6 +88,46 @@ def _render_evidence_checklist(case: dict) -> None:
         st.markdown(f"- {item}")
 
 
+def _render_submitted_evidence(client: ClearRiskAPIClient, case: dict) -> None:
+    submissions = case.get("evidence_submissions") or []
+    if not submissions:
+        st.caption("No evidence has been submitted for this case yet.")
+        return
+
+    st.markdown("### Submitted evidence")
+    for submission in submissions:
+        with st.container(border=True):
+            st.markdown(f"**Submitted:** {submission.get('submitted_at', '—')} · **Status:** {submission.get('status', '—')}")
+            references = submission.get("evidence_references") or []
+            if references:
+                st.markdown("**Evidence references:** " + ", ".join(references))
+
+            attachments = submission.get("attachments") or []
+            if not attachments:
+                st.caption("No file attachments for this submission.")
+                continue
+
+            for attachment in attachments:
+                cols = st.columns([3, 1])
+                size_kb = attachment["size_bytes"] / 1024
+                cols[0].markdown(f"📎 {attachment['original_filename']} ({size_kb:.1f} KB)")
+                download_key = f"download_{attachment['attachment_id']}"
+                if cols[1].button("Download", key=download_key):
+                    try:
+                        content, content_type = client.download_attachment(
+                            case["case_id"], submission["evidence_id"], attachment["attachment_id"],
+                        )
+                        st.download_button(
+                            "Save file",
+                            data=content,
+                            file_name=attachment["original_filename"],
+                            mime=content_type,
+                            key=f"save_{attachment['attachment_id']}",
+                        )
+                    except DashboardAPIError as exc:
+                        render_error(exc)
+
+
 def _render_merchant_safe_preview(case: dict) -> None:
     st.caption("Only the merchant-safe explanation — no probability, score, or internal policy detail.")
     merchant_safe = case.get("merchant_safe_explanation") or {}
@@ -155,6 +195,8 @@ def render_case_detail(client: ClearRiskAPIClient) -> None:
         _render_why_flagged(case)
     with evidence_tab:
         _render_evidence_checklist(case)
+        st.divider()
+        _render_submitted_evidence(client, case)
     with merchant_tab:
         _render_merchant_safe_preview(case)
     with analyst_tab:

@@ -73,6 +73,10 @@ def add_evidence(session: Session, evidence: EvidenceSubmission) -> EvidenceSubm
     return evidence
 
 
+def get_evidence_submission(session: Session, evidence_id: str) -> EvidenceSubmission | None:
+    return session.get(EvidenceSubmission, evidence_id)
+
+
 def get_next_sequence_number(session: Session, case_id: str) -> int:
     stmt = select(AuditEvent).where(AuditEvent.case_id == case_id).order_by(AuditEvent.event_sequence_number.desc())
     last_event = session.execute(stmt).scalars().first()

@@ -56,9 +56,16 @@ def test_no_prohibited_data_fields_in_source():
         assert field not in source, f"Forbidden field {field!r} found in dashboard source"
 
 
-def test_merchant_response_page_has_no_file_uploader():
+def test_merchant_response_page_file_uploader_is_type_restricted():
+    """Phase 2 added a real file uploader for evidence attachments (see
+    docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md) -- this no longer asserts
+    zero file upload capability, but it does assert the uploader is
+    type-restricted in the UI (defense in depth; the backend is the real
+    enforcement point via extension allowlist + magic-byte content check)
+    and that no camera/webcam capture exists."""
     source = (DASHBOARD_DIR / "components" / "evidence_form.py").read_text()
-    assert "file_uploader" not in source
+    assert "st.file_uploader" in source
+    assert "ALLOWED_ATTACHMENT_TYPES" in source
     assert "st.camera_input" not in source
 
 

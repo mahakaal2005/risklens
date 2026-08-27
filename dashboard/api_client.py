@@ -163,3 +163,62 @@ class ClearRiskAPIClient:
             "evidence_references": evidence_references,
         }
         return self._require_notice(self._request("POST", f"/cases/{case_id}/evidence", json_body=body))
+
+    def upload_attachment(
+        self,
+        case_id: str,
+        evidence_id: str,
+        filename: str,
+        content: bytes,
+        content_type: str,
+    ) -> dict:
+        """Real file upload (Phase 2) -- multipart, not JSON, so this method
+        bypasses _request() and builds its own httpx call. The backend
+        re-validates the file independently (extension allowlist, size cap,
+        magic-byte content check); this client does not duplicate that
+        validation, only surfaces whatever error the backend returns."""
+        url = f"{self.base_url}/cases/{case_id}/evidence/{evidence_id}/attachments"
+        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
+        try:
+            response = httpx.post(
+                url, files={"file": (filename, content, content_type)}, headers=headers, timeout=self.timeout,
+            )
+        except httpx.TimeoutException as exc:
+            raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
+        except httpx.ConnectError as exc:
+            raise DashboardAPIError(f"Could not connect to the local backend at {self.base_url}.") from exc
+        except httpx.HTTPError as exc:
+            raise DashboardAPIError("A network error occurred while contacting the local backend.") from exc
+
+        try:
+            body = response.json()
+        except ValueError as exc:
+            raise DashboardAPIError("The local backend returned a response that could not be read.") from exc
+
+        if response.status_code >= 400:
+            raise DashboardAPIError(self._extract_error_message(body))
+        return self._require_notice(body)
+
+    def download_attachment(self, case_id: str, evidence_id: str, attachment_id: str) -> tuple[bytes, str]:
+        """Returns (raw file bytes, content_type). Unlike every other method
+        here, the response body is not JSON, so this bypasses _request()
+        entirely."""
+        url = f"{self.base_url}/cases/{case_id}/evidence/{evidence_id}/attachments/{attachment_id}"
+        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
+        try:
+            response = httpx.get(url, headers=headers, timeout=self.timeout)
+        except httpx.TimeoutException as exc:
+            raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
+        except httpx.ConnectError as exc:
+            raise DashboardAPIError(f"Could not connect to the local backend at {self.base_url}.") from exc
+        except httpx.HTTPError as exc:
+            raise DashboardAPIError("A network error occurred while contacting the local backend.") from exc
+
+        if response.status_code >= 400:
+            try:
+                body = response.json()
+            except ValueError:
+                raise DashboardAPIError("The local backend rejected the download request.")
+            raise DashboardAPIError(self._extract_error_message(body))
+
+        return response.content, response.headers.get("content-type", "application/octet-stream")

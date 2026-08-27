@@ -9,3 +9,6 @@ __pycache__/
 
 # External benchmark dataset -- never commit. See docs/EXTERNAL_BENCHMARK.md.
 data/external/
+
+# Uploaded evidence attachments (Phase 2, local demo only) -- never commit.
+data/evidence_attachments/

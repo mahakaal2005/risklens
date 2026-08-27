@@ -114,6 +114,27 @@ class EvidenceSubmission(Base):
     status: Mapped[str] = mapped_column(String, nullable=False, default="SUBMITTED")
 
     case: Mapped["ReviewCase"] = relationship(back_populates="evidence_submissions")
+    attachments: Mapped[list["EvidenceAttachment"]] = relationship(back_populates="evidence", cascade="all, delete-orphan")
+
+
+class EvidenceAttachment(Base):
+    """A real uploaded file attached to an evidence submission (Phase 2 --
+    see docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md). stored_filename is a
+    server-generated name; the client-supplied original_filename is kept
+    only for display, never used to construct a filesystem path."""
+
+    __tablename__ = "evidence_attachments"
+
+    attachment_id: Mapped[str] = mapped_column(String, primary_key=True)
+    evidence_id: Mapped[str] = mapped_column(ForeignKey("evidence_submissions.evidence_id"), nullable=False)
+
+    original_filename: Mapped[str] = mapped_column(String, nullable=False)
+    stored_filename: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    content_type: Mapped[str] = mapped_column(String, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    uploaded_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    evidence: Mapped["EvidenceSubmission"] = relationship(back_populates="attachments")
 
 
 class AuditEvent(Base):
