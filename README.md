@@ -136,6 +136,7 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  - `docs/PHASE_2_AUTH_DESIGN.md` — the approved Phase 2 authentication design (data model, role/permission mapping, the breaking-change decision)
  - `docs/MILESTONE_9_AUTH.md` — the as-built local-demo authentication report: bugs found, test results, how to run
  - `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md` — real evidence-attachment file upload/download: validation layers, storage model, API/dashboard integration, known limitations
+ - `docs/PHASE_2_REVIEW_SLA_DESIGN.md` — computed (not stored) review SLA and simulated in-app breach notification: thresholds, clock-stop behavior, dashboard integration
 
  ## Status
 
@@ -150,11 +151,14 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  same API (Milestone 8).
 
  **Phase 2 in progress:** local-demo authentication and three basic roles
- (`reviewer`/`merchant`/`risk_manager`, Milestone 9), plus real evidence-attachment
- file upload/download for the `merchant` role — implemented and tested
- (430 tests passing), on branch `phase-2-auth-design`. Not production-grade
- auth, no malware scanning on uploads; see `docs/MILESTONE_9_AUTH.md`,
- `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`, and `SECURITY.md`. Real
- anonymized-data import, review SLA, and a feedback/retraining loop remain
- unbuilt Phase 2 items. See `docs/IMPLEMENTATION_PLAN.md` for what remains
- beyond this local Phase 1 prototype.
+ (`reviewer`/`merchant`/`risk_manager`, Milestone 9), real evidence-attachment
+ file upload/download for the `merchant` role, and a computed (not stored)
+ review SLA with simulated in-app breach notifications — implemented and
+ tested (441 tests passing), on branch `phase-2-auth-design`. Not
+ production-grade auth, no malware scanning on uploads, no real
+ email/SMS/webhook notifications; see `docs/MILESTONE_9_AUTH.md`,
+ `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`,
+ `docs/PHASE_2_REVIEW_SLA_DESIGN.md`, and `SECURITY.md`. Real anonymized-data
+ import and a feedback/retraining loop remain unbuilt Phase 2 items. See
+ `docs/IMPLEMENTATION_PLAN.md` for what remains beyond this local Phase 1
+ prototype.

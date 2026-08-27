@@ -46,6 +46,38 @@ def client(tmp_path):
     app.dependency_overrides.clear()
 
 
+def test_case_summary_includes_sla_fields(client):
+    response = client.get("/cases", params={"recommendation": "MANUAL_REVIEW_REQUIRED"})
+    body = response.json()
+    assert body["items"], "expected at least one MANUAL_REVIEW_REQUIRED demo case"
+    item = body["items"][0]
+    assert item["sla_hours"] == 48
+    assert item["sla_deadline"] is not None
+    assert item["sla_breached"] is False  # freshly seeded, well within the window
+
+
+def test_case_detail_includes_sla_fields(client):
+    list_response = client.get("/cases", params={"recommendation": "REQUEST_EVIDENCE"})
+    case_id = list_response.json()["items"][0]["case_id"]
+    response = client.get(f"/cases/{case_id}")
+    body = response.json()
+    assert body["sla_hours"] == 72
+    assert body["sla_deadline"] is not None
+    assert body["hours_until_deadline"] > 0
+
+
+def test_resolved_case_reports_sla_not_breached_regardless_of_age(client):
+    list_response = client.get("/cases", params={"recommendation": "REQUEST_EVIDENCE"})
+    case_id = list_response.json()["items"][0]["case_id"]
+
+    client.post(f"/cases/{case_id}/review-actions", json={"action": "CLEAR_CASE", "reviewer_note": "closing"})
+    response = client.get(f"/cases/{case_id}")
+    body = response.json()
+    assert body["case_status"] == "RESOLVED"
+    assert body["sla_breached"] is False
+    assert body["hours_until_deadline"] is None
+
+
 def test_unauthenticated_request_is_rejected(client):
     unauthenticated = TestClient(app)  # deliberately no Authorization header
     response = unauthenticated.get("/cases")

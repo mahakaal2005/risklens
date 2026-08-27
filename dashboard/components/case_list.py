@@ -8,7 +8,7 @@ from __future__ import annotations
 import streamlit as st
 
 from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
-from dashboard.components.common import format_timestamp, render_error
+from dashboard.components.common import format_timestamp, render_error, sla_display as _sla_display
 
 STATUS_OPTIONS = ["All", "OPEN", "EVIDENCE_REQUESTED", "EVIDENCE_SUBMITTED", "UNDER_REVIEW", "RESOLVED", "ESCALATED"]
 RECOMMENDATION_OPTIONS = ["All", "APPROVE", "ALLOW_WITH_MONITORING", "REQUEST_EVIDENCE", "MANUAL_REVIEW_REQUIRED", "ESCALATE_TO_COMPLIANCE"]
@@ -32,17 +32,27 @@ def render_review_queue(client: ClearRiskAPIClient) -> None:
         "OPEN": 0, "EVIDENCE_REQUESTED": 0, "EVIDENCE_SUBMITTED": 0,
         "UNDER_REVIEW": 0, "RESOLVED": 0, "ESCALATED": 0,
     }
+    breached_count = 0
     for item in all_items:
         status = item.get("case_status")
         if status in status_counts:
             status_counts[status] += 1
+        if item.get("sla_breached"):
+            breached_count += 1
 
-    cols = st.columns(4)
+    cols = st.columns(5)
     cols[0].metric("Open", status_counts["OPEN"])
     cols[1].metric("Evidence requested", status_counts["EVIDENCE_REQUESTED"])
     cols[2].metric("Escalated", status_counts["ESCALATED"])
     cols[3].metric("Resolved", status_counts["RESOLVED"])
+    cols[4].metric("SLA breached", breached_count)
     st.caption(f"{len(all_items)} case(s) returned (up to {MAX_FETCH_LIMIT} per page).")
+    if breached_count:
+        st.warning(
+            f"{breached_count} case(s) are past their review SLA — see the SLA column below. "
+            "This is a simulated in-app indicator; no real email/SMS notification exists.",
+            icon="⏰",
+        )
 
     with st.expander("Filters"):
         filter_cols = st.columns(3)
@@ -77,6 +87,7 @@ def render_review_queue(client: ClearRiskAPIClient) -> None:
             "Case status": item["case_status"],
             "Final outcome": item.get("final_outcome") or "—",
             "Created": format_timestamp(item["created_at"]),
+            "SLA": _sla_display(item),
         }
         for item in items
     ]

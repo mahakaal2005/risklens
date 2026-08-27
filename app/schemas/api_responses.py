@@ -99,6 +99,10 @@ class CaseSummary(BaseModel):
     created_at: dt.datetime
     updated_at: dt.datetime
     final_outcome: FinalOutcome | None = None
+    sla_hours: int | None = None
+    sla_deadline: dt.datetime | None = None
+    hours_until_deadline: float | None = None
+    sla_breached: bool = False
     synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
 
 
@@ -148,6 +152,10 @@ class CaseDetailResponse(BaseModel):
     final_outcome: FinalOutcome | None
     reviewer_note: str | None
     evidence_submissions: list[EvidenceSubmissionSummary]
+    sla_hours: int | None = None
+    sla_deadline: dt.datetime | None = None
+    hours_until_deadline: float | None = None
+    sla_breached: bool = False
     synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
 
 

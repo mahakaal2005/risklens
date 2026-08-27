@@ -10,7 +10,7 @@ from __future__ import annotations
 import streamlit as st
 
 from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
-from dashboard.components.common import render_error, render_intensity_badge
+from dashboard.components.common import render_error, render_intensity_badge, sla_display
 from dashboard.components.reviewer_actions import render_reviewer_actions
 
 UNCERTAINTY_TEXT = "This is a review signal, not a final fraud finding."
@@ -39,6 +39,16 @@ def _render_case_header(case: dict) -> None:
         render_intensity_badge(case.get("risk_signal_intensity"))
 
     st.markdown(f"**Recommended workflow action:** {case['recommendation']}")
+
+    sla_text = sla_display(case)
+    if case.get("sla_breached"):
+        st.warning(
+            f"Review SLA: {sla_text} (simulated in-app indicator only — no real email/SMS notification exists).",
+            icon="⏰",
+        )
+    elif sla_text != "N/A":
+        st.caption(f"Review SLA: {sla_text}")
+
     st.caption(case.get("synthetic_data_notice", ""))
 
 

@@ -28,11 +28,13 @@ from app.schemas.api_responses import (
 )
 from app.services.audit_service import _assert_payload_is_safe
 from app.services.case_service import CaseNotFoundError, InvalidTransitionError, apply_reviewer_action, start_review
+from app.services.sla_service import compute_sla
 
 router = APIRouter(tags=["cases"])
 
 
 def _to_case_summary(case: ReviewCase) -> CaseSummary:
+    sla = compute_sla(case.recommendation, case.created_at, case.case_status)
     return CaseSummary(
         case_id=case.case_id,
         merchant_id=case.merchant_id,
@@ -43,6 +45,10 @@ def _to_case_summary(case: ReviewCase) -> CaseSummary:
         created_at=case.created_at,
         updated_at=case.updated_at,
         final_outcome=case.final_outcome,
+        sla_hours=sla["sla_hours"],
+        sla_deadline=sla["sla_deadline"],
+        hours_until_deadline=sla["hours_until_deadline"],
+        sla_breached=sla["sla_breached"],
     )
 
 
@@ -66,6 +72,7 @@ def _to_evidence_summary(evidence: EvidenceSubmission) -> EvidenceSubmissionSumm
 
 
 def _to_case_detail(case: ReviewCase) -> CaseDetailResponse:
+    sla = compute_sla(case.recommendation, case.created_at, case.case_status)
     return CaseDetailResponse(
         case_id=case.case_id,
         merchant_id=case.merchant_id,
@@ -88,6 +95,10 @@ def _to_case_detail(case: ReviewCase) -> CaseDetailResponse:
         final_outcome=case.final_outcome,
         reviewer_note=case.reviewer_note,
         evidence_submissions=[_to_evidence_summary(e) for e in case.evidence_submissions],
+        sla_hours=sla["sla_hours"],
+        sla_deadline=sla["sla_deadline"],
+        hours_until_deadline=sla["hours_until_deadline"],
+        sla_breached=sla["sla_breached"],
     )
 
 

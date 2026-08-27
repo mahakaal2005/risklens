@@ -80,6 +80,10 @@ Paginated, filterable list of persisted review cases. Requires authentication (a
       "created_at": "2026-08-23T17:41:33Z",
       "updated_at": "2026-08-23T17:41:33Z",
       "final_outcome": null,
+      "sla_hours": 48,
+      "sla_deadline": "2026-08-25T17:41:33Z",
+      "hours_until_deadline": -3.2,
+      "sla_breached": true,
       "synthetic_data_notice": "Local synthetic-data demonstration only."
     }
   ],
@@ -90,6 +94,8 @@ Paginated, filterable list of persisted review cases. Requires authentication (a
 }
 ```
 Sorted deterministically by `created_at` descending, then `case_id` ascending. Never includes `label_high_loss_next_30d`, `latent_state_for_demo_only`, `support_ticket_rate` (diagnostic-only), or any prohibited/enforcement field.
+
+`sla_hours`/`sla_deadline`/`hours_until_deadline`/`sla_breached` (Phase 2 — see `docs/PHASE_2_REVIEW_SLA_DESIGN.md`) are **computed at read time**, not stored: `sla_hours` is `null` for recommendations with no configured SLA (`APPROVE`, `ALLOW_WITH_MONITORING`); `hours_until_deadline` and `sla_breached` reset to `null`/`false` once a case reaches `RESOLVED` or `ESCALATED` (the SLA clock stops on a terminal case, even if it took a while to get there). This is a simulated in-app indicator only — no real email/SMS/webhook notification exists anywhere in this codebase.
 
 ## GET /cases/{case_id}
 
