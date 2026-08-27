@@ -53,7 +53,9 @@
  python3 scripts/seed_demo_cases.py          # persists non-APPROVE demo packets as review cases in SQLite
  python3 scripts/seed_demo_users.py          # prints local-demo login credentials once (Phase 2 auth)
  python3 scripts/demo_case_workflow.py       # walks two seeded cases through the full reviewer/evidence workflow
- python3 -m pytest tests/ -v                 # full test suite (402 tests as of Milestone 9)
+ python3 scripts/export_feedback_labels.py   # exports FALSE_POSITIVE/CONFIRMED_RISK resolutions -> ml/artifacts/feedback_label_overrides.json
+ python3 -m ml.retrain_with_feedback         # manually-triggered only; retrains + writes ml/artifacts/feedback_retrain_report.json
+ python3 -m pytest tests/ -v                 # full test suite (454 tests as of the feedback retraining loop)
  ```
 
  ### Running the API (local, synthetic-data demo only)
@@ -137,6 +139,7 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  - `docs/MILESTONE_9_AUTH.md` — the as-built local-demo authentication report: bugs found, test results, how to run
  - `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md` — real evidence-attachment file upload/download: validation layers, storage model, API/dashboard integration, known limitations
  - `docs/PHASE_2_REVIEW_SLA_DESIGN.md` — computed (not stored) review SLA and simulated in-app breach notification: thresholds, clock-stop behavior, dashboard integration
+ - `docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md` — manually-triggered feedback retraining loop: label-correction rules, test-split-preservation guarantee, and a real end-to-end finding from live verification
 
  ## Status
 
@@ -152,13 +155,17 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
 
  **Phase 2 in progress:** local-demo authentication and three basic roles
  (`reviewer`/`merchant`/`risk_manager`, Milestone 9), real evidence-attachment
- file upload/download for the `merchant` role, and a computed (not stored)
- review SLA with simulated in-app breach notifications — implemented and
- tested (441 tests passing), on branch `phase-2-auth-design`. Not
- production-grade auth, no malware scanning on uploads, no real
- email/SMS/webhook notifications; see `docs/MILESTONE_9_AUTH.md`,
+ file upload/download for the `merchant` role, a computed (not stored)
+ review SLA with simulated in-app breach notifications, and a
+ manually-triggered feedback retraining loop (reviewer FALSE_POSITIVE/
+ CONFIRMED_RISK resolutions correct training-split labels only, held-out
+ test split never touched) — implemented and tested (454 tests passing),
+ on branch `phase-2-auth-design`. Not production-grade auth, no malware
+ scanning on uploads, no real email/SMS/webhook notifications, no automatic
+ retraining; see `docs/MILESTONE_9_AUTH.md`,
  `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`,
- `docs/PHASE_2_REVIEW_SLA_DESIGN.md`, and `SECURITY.md`. Real anonymized-data
- import and a feedback/retraining loop remain unbuilt Phase 2 items. See
+ `docs/PHASE_2_REVIEW_SLA_DESIGN.md`,
+ `docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md`, and `SECURITY.md`. Real
+ anonymized-data import remains the one unbuilt Phase 2 item. See
  `docs/IMPLEMENTATION_PLAN.md` for what remains beyond this local Phase 1
  prototype.
