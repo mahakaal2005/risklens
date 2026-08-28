@@ -13,13 +13,11 @@ import datetime as dt
 from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.time_utils import utcnow as _utcnow
+
 
 class Base(DeclarativeBase):
     pass
-
-
-def _utcnow() -> dt.datetime:
-    return dt.datetime.now(dt.timezone.utc)
 
 
 class User(Base):
@@ -80,6 +78,7 @@ class ReviewCase(Base):
     analyst_summary: Mapped[str] = mapped_column(Text, nullable=False)
     merchant_safe_explanation: Mapped[dict] = mapped_column(JSON, nullable=False)
     triggered_rules_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    triggered_rule_explanations_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     evidence_checklist_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
 
     model_version: Mapped[str | None] = mapped_column(String, nullable=True)

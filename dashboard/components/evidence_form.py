@@ -12,7 +12,7 @@ from __future__ import annotations
 import streamlit as st
 
 from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
-from dashboard.components.common import render_error
+from dashboard.components.common import get_available_case_ids, render_error
 
 EXAMPLE_REFERENCES = [
     "invoice_demo_001.pdf",
@@ -28,15 +28,8 @@ def render_merchant_response(client: ClearRiskAPIClient) -> None:
     st.title("Merchant Response")
     st.caption("Simulates a merchant submitting a response to a review case.")
 
-    try:
-        cases_response = client.list_cases(limit=100)
-        available_case_ids = [item["case_id"] for item in cases_response.get("items", [])]
-    except DashboardAPIError as exc:
-        render_error(exc)
-        return
-
-    if not available_case_ids:
-        st.info("No cases exist yet. Seed demo cases first (see docs/UI_DEMO_GUIDE.md).")
+    available_case_ids = get_available_case_ids(client)
+    if available_case_ids is None:
         return
 
     # Default to whichever case the reviewer was last looking at, so

@@ -130,6 +130,18 @@ class EvidenceSubmissionSummary(BaseModel):
     attachments: list[EvidenceAttachmentSummary] = []
 
 
+class TriggeredRuleExplanation(BaseModel):
+    """One triggered rule's concrete before/after values as a human-readable
+    sentence (e.g. 'Refund rate increased from 1.63% to 6.45% (4.82% change).') --
+    this is the concrete-trend-value explanation CLAUDE.md's Core Promise
+    describes; ml/case_packet.py always computed it, but until now it was
+    never mapped past the packet stage into the persisted case or this API."""
+
+    rule_id: str
+    severity: str
+    explanation: str
+
+
 class CaseDetailResponse(BaseModel):
     case_id: str
     merchant_id: str
@@ -143,6 +155,7 @@ class CaseDetailResponse(BaseModel):
     analyst_summary: str
     merchant_safe_explanation: dict
     triggered_rules: list[str]
+    triggered_rule_explanations: list[TriggeredRuleExplanation] = []
     evidence_checklist: list[str]
     model_version: str | None
     rules_version: str

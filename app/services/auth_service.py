@@ -22,6 +22,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.models import User, UserSession
+from app.time_utils import as_aware_utc as _as_aware_utc
+from app.time_utils import utcnow as _utcnow
 
 PBKDF2_ITERATIONS = 260_000
 SESSION_LIFETIME = dt.timedelta(hours=12)
@@ -33,10 +35,6 @@ class AuthError(Exception):
     """Raised for any login/session failure. Message is always generic
     ("invalid username or password") -- never reveals which part was wrong,
     and never echoes back user-supplied input."""
-
-
-def _utcnow() -> dt.datetime:
-    return dt.datetime.now(dt.timezone.utc)
 
 
 def hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
@@ -100,14 +98,6 @@ def create_session(session: Session, user: User) -> UserSession:
     session.add(user_session)
     session.flush()
     return user_session
-
-
-def _as_aware_utc(value: dt.datetime) -> dt.datetime:
-    """SQLite has no native timezone-aware column type -- a DateTime(timezone=True)
-    value written as UTC can still come back naive on read, depending on
-    driver/dialect behavior. Treat any naive value as UTC rather than
-    letting it silently compare wrong (or raise) against an aware value."""
-    return value if value.tzinfo is not None else value.replace(tzinfo=dt.timezone.utc)
 
 
 def get_current_user(session: Session, token: str) -> User | None:

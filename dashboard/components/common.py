@@ -110,3 +110,28 @@ def safe_get(data: dict, key: str, default="—"):
 
 def render_error(exc: DashboardAPIError) -> None:
     st.error(exc.message, icon="🚫")
+
+
+NO_CASES_MESSAGE = "No cases exist yet. Seed demo cases first (see docs/UI_DEMO_GUIDE.md)."
+
+
+def get_available_case_ids(client: ClearRiskAPIClient, limit: int = 100) -> list[str] | None:
+    """Fetches case IDs for a page's case picker. Returns None (having
+    already rendered the appropriate error/empty-state message) if the
+    caller should stop rendering -- so every call site is just:
+
+        available_case_ids = get_available_case_ids(client)
+        if available_case_ids is None:
+            return
+    """
+    try:
+        cases_response = client.list_cases(limit=limit)
+    except DashboardAPIError as exc:
+        render_error(exc)
+        return None
+
+    available_case_ids = [item["case_id"] for item in cases_response.get("items", [])]
+    if not available_case_ids:
+        st.info(NO_CASES_MESSAGE)
+        return None
+    return available_case_ids

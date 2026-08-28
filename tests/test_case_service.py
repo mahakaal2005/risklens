@@ -64,6 +64,7 @@ def test_target_label_and_latent_state_never_persist(session_factory, demo_packe
             "merchant_safe_explanation": stored.merchant_safe_explanation,
             "analyst_summary": stored.analyst_summary,
             "triggered_rules_json": stored.triggered_rules_json,
+            "triggered_rule_explanations_json": stored.triggered_rule_explanations_json,
             "evidence_checklist_json": stored.evidence_checklist_json,
         })
         assert LABEL_COLUMN not in serialized_case
@@ -74,6 +75,25 @@ def test_target_label_and_latent_state_never_persist(session_factory, demo_packe
             payload_text = json.dumps(e.event_payload_json)
             assert LABEL_COLUMN not in payload_text
             assert LATENT_STATE_COLUMN not in payload_text
+
+
+def test_triggered_rule_explanations_are_persisted_with_concrete_values(session_factory, demo_packets):
+    """Regression test: this concrete before/after explanation text
+    (CLAUDE.md's Core Promise) was computed by ml/case_packet.py all along
+    but was never mapped past the packet stage until this fix."""
+    packet = demo_packets["seasonal_sale_false_positive_candidate"]
+    expected = packet["analyst_explanation"]["triggered_rule_explanations"]
+    assert expected, "fixture packet should have at least one triggered-rule explanation to test against"
+
+    with session_scope(session_factory) as session:
+        case, _events = create_case_from_packet(session, packet)
+
+    with session_scope(session_factory) as session:
+        stored = get_case(session, case.case_id)
+        assert stored.triggered_rule_explanations_json == expected
+        assert any("%" in e["explanation"] for e in stored.triggered_rule_explanations_json), (
+            "expected at least one concrete percentage value in the persisted explanation text"
+        )
 
 
 def test_event_sequence_numbers_are_contiguous_and_ordered(session_factory, demo_packets):

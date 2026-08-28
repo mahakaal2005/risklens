@@ -84,8 +84,8 @@ The dashboard's action list is a *display* convenience, not the source of truth 
 
 Two Milestone 8 "nice to have" items are not currently exposed by the API and are shown as explicit "not available" notices rather than invented:
 
-- **Trend view** — refund/chargeback/volume/evidence/support-resolution current-vs-prior comparisons were never persisted by `app/services/case_service.py` (Milestone 5) onto the `ReviewCase` row, so `GET /cases/{id}` cannot return them today. Per the Milestone 8 spec's own instruction ("If API case response does not safely contain all values required for a chart, show only the available comparisons... do not add a backend endpoint without approval"), the gap is stated plainly instead of adding an endpoint unilaterally.
-- **Top model factors** — same underlying gap; not persisted, so not shown, with a note rather than a fabricated ranking.
+- **Trend view — partially fixed.** Per-triggered-rule concrete before/after values (e.g. "Refund rate increased from 1.63% to 6.45%") are now persisted (`ReviewCase.triggered_rule_explanations_json`) and shown in the "Why flagged" tab — this closed a real gap against `CLAUDE.md`'s Core Promise, found while auditing the project. Still not available: current-vs-prior trend values for features that did *not* trigger a rule, and a full refund/chargeback/volume/evidence/support-resolution chart. Stated plainly rather than fabricated.
+- **Top model factors** — a ranked list of every feature's contribution (not just triggered-rule ones) is still not persisted, so not shown, with a note rather than a fabricated ranking.
 
 Both notes now live as a single caption at the bottom of the *Analyst detail* tab rather than occupying two full mid-page sections, so the absence is still disclosed without dominating the reviewer's screen.
 
@@ -111,4 +111,4 @@ To capture your own screenshots for a submission deck:
 - Append-only application audit log is not cryptographically immutable (stated explicitly on the Audit Timeline page).
 - No payment, settlement, hold, ban, termination, or enforcement action exists anywhere in the UI or the API it calls.
 - No real-time model monitoring — `/metrics` reads a static, offline-generated report (Milestone 7).
-- Trend view and top-model-factor display are currently "not available" placeholders (Section 8 above) pending a future milestone's decision on whether to persist that data.
+- Per-triggered-rule concrete trend values are shown (Section 8 above); a full ranked top-model-factor display and non-triggered-rule trend values remain "not available" placeholders pending a future milestone's decision on whether to persist that data.

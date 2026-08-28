@@ -51,17 +51,26 @@ class ClearRiskAPIClient:
         self.timeout = timeout
         self.session_token = session_token
 
-    def _request(self, method: str, path: str, json_body: dict | None = None, params: dict | None = None) -> dict:
-        url = f"{self.base_url}{path}"
-        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
+    def _auth_headers(self) -> dict[str, str] | None:
+        return {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
+
+    def _send(self, method: str, url: str, **kwargs) -> httpx.Response:
+        """Makes the actual httpx call and translates network-level
+        exceptions into DashboardAPIError. Shared by every method that
+        talks to the network, whether the response body ends up being
+        JSON (_request) or raw bytes (upload/download_attachment)."""
         try:
-            response = httpx.request(method, url, json=json_body, params=params, timeout=self.timeout, headers=headers)
+            return httpx.request(method, url, timeout=self.timeout, **kwargs)
         except httpx.TimeoutException as exc:
             raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
         except httpx.ConnectError as exc:
             raise DashboardAPIError(f"Could not connect to the local backend at {self.base_url}.") from exc
         except httpx.HTTPError as exc:
             raise DashboardAPIError("A network error occurred while contacting the local backend.") from exc
+
+    def _request(self, method: str, path: str, json_body: dict | None = None, params: dict | None = None) -> dict:
+        url = f"{self.base_url}{path}"
+        response = self._send(method, url, json=json_body, params=params, headers=self._auth_headers())
 
         try:
             body = response.json()
@@ -178,17 +187,9 @@ class ClearRiskAPIClient:
         magic-byte content check); this client does not duplicate that
         validation, only surfaces whatever error the backend returns."""
         url = f"{self.base_url}/cases/{case_id}/evidence/{evidence_id}/attachments"
-        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
-        try:
-            response = httpx.post(
-                url, files={"file": (filename, content, content_type)}, headers=headers, timeout=self.timeout,
-            )
-        except httpx.TimeoutException as exc:
-            raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
-        except httpx.ConnectError as exc:
-            raise DashboardAPIError(f"Could not connect to the local backend at {self.base_url}.") from exc
-        except httpx.HTTPError as exc:
-            raise DashboardAPIError("A network error occurred while contacting the local backend.") from exc
+        response = self._send(
+            "POST", url, files={"file": (filename, content, content_type)}, headers=self._auth_headers(),
+        )
 
         try:
             body = response.json()
@@ -204,15 +205,7 @@ class ClearRiskAPIClient:
         here, the response body is not JSON, so this bypasses _request()
         entirely."""
         url = f"{self.base_url}/cases/{case_id}/evidence/{evidence_id}/attachments/{attachment_id}"
-        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
-        try:
-            response = httpx.get(url, headers=headers, timeout=self.timeout)
-        except httpx.TimeoutException as exc:
-            raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
-        except httpx.ConnectError as exc:
-            raise DashboardAPIError(f"Could not connect to the local backend at {self.base_url}.") from exc
-        except httpx.HTTPError as exc:
-            raise DashboardAPIError("A network error occurred while contacting the local backend.") from exc
+        response = self._send("GET", url, headers=self._auth_headers())
 
         if response.status_code >= 400:
             try:

@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import datetime as dt
 
+from app.time_utils import as_aware_utc, utcnow
+
 # Hours from case creation until the case is considered SLA-breached, keyed
 # by the case's recommendation. Cases with no configured SLA (e.g. a
 # recommendation that never results in a persisted review case) return
@@ -31,10 +33,6 @@ SLA_HOURS_BY_RECOMMENDATION: dict[str, int] = {
 TERMINAL_STATUSES = {"RESOLVED", "ESCALATED"}
 
 
-def _utcnow() -> dt.datetime:
-    return dt.datetime.now(dt.timezone.utc)
-
-
 def compute_sla(recommendation: str, created_at: dt.datetime, case_status: str) -> dict:
     """Returns a dict with sla_hours, sla_deadline, hours_until_deadline,
     and sla_breached -- all None/False when no SLA applies or the case's
@@ -44,14 +42,13 @@ def compute_sla(recommendation: str, created_at: dt.datetime, case_status: str) 
     if sla_hours is None:
         return {"sla_hours": None, "sla_deadline": None, "hours_until_deadline": None, "sla_breached": False}
 
-    if created_at.tzinfo is None:
-        created_at = created_at.replace(tzinfo=dt.timezone.utc)
+    created_at = as_aware_utc(created_at)
     deadline = created_at + dt.timedelta(hours=sla_hours)
 
     if case_status in TERMINAL_STATUSES:
         return {"sla_hours": sla_hours, "sla_deadline": deadline, "hours_until_deadline": None, "sla_breached": False}
 
-    remaining = (deadline - _utcnow()).total_seconds() / 3600.0
+    remaining = (deadline - utcnow()).total_seconds() / 3600.0
     return {
         "sla_hours": sla_hours,
         "sla_deadline": deadline,

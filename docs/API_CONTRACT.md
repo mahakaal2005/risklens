@@ -101,7 +101,7 @@ Sorted deterministically by `created_at` descending, then `case_id` ascending. N
 
 Safe full case detail. Requires authentication. A `merchant`-role caller reading a case belonging to a different merchant gets the same 404 as an unknown case_id.
 
-**Response 200:** case_id, merchant_id, week_start, case_status, risk_signal_intensity, recommendation, policy_explanation, analyst_summary, merchant_safe_explanation, triggered_rules, evidence_checklist, model_version, rules_version, created_at, updated_at, resolved_at, final_outcome, reviewer_note, evidence_submissions (summary only: evidence_id, submitted_at, status, evidence_references — no audit events here), synthetic_data_notice.
+**Response 200:** case_id, merchant_id, week_start, case_status, risk_signal_intensity, recommendation, policy_explanation, analyst_summary, merchant_safe_explanation, triggered_rules, triggered_rule_explanations (list of `{rule_id, severity, explanation}` — the concrete before/after sentence for each triggered rule, e.g. "Refund rate increased from 1.63% to 6.45% (4.82% change)."; empty list if no rules triggered), evidence_checklist, model_version, rules_version, created_at, updated_at, resolved_at, final_outcome, reviewer_note, evidence_submissions (summary only: evidence_id, submitted_at, status, evidence_references — no audit events here), synthetic_data_notice.
 
 **Response 404** (unknown case_id, or a merchant-role caller reading a case that isn't theirs):
 ```json

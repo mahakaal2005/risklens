@@ -110,6 +110,7 @@ def create_case_from_packet(session: Session, packet: dict) -> tuple[ReviewCase 
         analyst_summary=packet["analyst_explanation"]["summary"],
         merchant_safe_explanation=packet["merchant_safe_explanation"],
         triggered_rules_json=assessment["triggered_rules"],
+        triggered_rule_explanations_json=packet["analyst_explanation"].get("triggered_rule_explanations", []),
         evidence_checklist_json=packet["evidence_checklist"],
         model_version=assessment["model_version"],
         rules_version=assessment["rules_version"],

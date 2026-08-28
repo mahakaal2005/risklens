@@ -10,7 +10,7 @@ from __future__ import annotations
 import streamlit as st
 
 from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
-from dashboard.components.common import render_error, render_intensity_badge, sla_display
+from dashboard.components.common import get_available_case_ids, render_error, render_intensity_badge, sla_display
 from dashboard.components.reviewer_actions import render_reviewer_actions
 
 UNCERTAINTY_TEXT = "This is a review signal, not a final fraud finding."
@@ -67,20 +67,28 @@ def _render_analyst_detail(case: dict) -> None:
     st.markdown(f"**Case ID:** `{case['case_id']}`")
 
     st.caption(
-        "Top model factors and current-vs-prior trend comparisons are not available from the "
-        "case-detail API response — that endpoint does not expose them yet (a known gap, tracked "
-        "separately). Nothing is inferred or filled in here."
+        "Top model factors (ranked feature-level contributions) and current-vs-prior trend values "
+        "for features that did NOT trigger a rule are not available from the case-detail API response "
+        "yet (a known gap, tracked separately). The 'Why flagged' tab does show a concrete before/after "
+        "value for each rule that DID trigger. Nothing is inferred or filled in here."
     )
 
 
 def _render_why_flagged(case: dict) -> None:
     st.write(case.get("analyst_summary", ""))
 
+    explanations_by_rule = {e["rule_id"]: e["explanation"] for e in (case.get("triggered_rule_explanations") or [])}
     triggered_rules = case.get("triggered_rules") or []
     if triggered_rules:
         st.markdown("**Triggered rules:**")
         for rule_id in triggered_rules:
-            st.markdown(f"- {RULE_LABELS.get(rule_id, rule_id)}")
+            label = RULE_LABELS.get(rule_id, rule_id)
+            concrete_explanation = explanations_by_rule.get(rule_id)
+            if concrete_explanation:
+                # e.g. "Refund rate spike -- Refund rate increased from 1.63% to 6.45% (4.82% change)."
+                st.markdown(f"- **{label}** — {concrete_explanation}")
+            else:
+                st.markdown(f"- {label}")
     else:
         st.caption("No rules triggered for this merchant-week.")
 
@@ -162,15 +170,8 @@ def render_case_detail(client: ClearRiskAPIClient) -> None:
 
     selected_case_id = st.session_state.get("selected_case_id")
 
-    try:
-        cases_response = client.list_cases(limit=100)
-        available_case_ids = [item["case_id"] for item in cases_response.get("items", [])]
-    except DashboardAPIError as exc:
-        render_error(exc)
-        return
-
-    if not available_case_ids:
-        st.info("No cases exist yet. Seed demo cases first (see docs/UI_DEMO_GUIDE.md).")
+    available_case_ids = get_available_case_ids(client)
+    if available_case_ids is None:
         return
 
     if selected_case_id not in available_case_ids:

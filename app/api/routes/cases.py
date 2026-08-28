@@ -87,6 +87,7 @@ def _to_case_detail(case: ReviewCase) -> CaseDetailResponse:
         analyst_summary=case.analyst_summary,
         merchant_safe_explanation=case.merchant_safe_explanation,
         triggered_rules=case.triggered_rules_json,
+        triggered_rule_explanations=case.triggered_rule_explanations_json,
         evidence_checklist=case.evidence_checklist_json,
         model_version=case.model_version,
         rules_version=case.rules_version,

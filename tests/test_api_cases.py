@@ -46,6 +46,21 @@ def client(tmp_path):
     app.dependency_overrides.clear()
 
 
+def test_case_detail_triggered_rule_explanations_include_concrete_values(client):
+    """Regression test for the core-promise gap: concrete before/after
+    values were computed but never reached the API until this fix."""
+    list_response = client.get("/cases", params={"recommendation": "REQUEST_EVIDENCE"})
+    case_id = list_response.json()["items"][0]["case_id"]
+
+    response = client.get(f"/cases/{case_id}")
+    body = response.json()
+    explanations = body["triggered_rule_explanations"]
+    assert explanations
+    for entry in explanations:
+        assert set(entry.keys()) == {"rule_id", "severity", "explanation"}
+        assert entry["rule_id"] in body["triggered_rules"]
+
+
 def test_case_summary_includes_sla_fields(client):
     response = client.get("/cases", params={"recommendation": "MANUAL_REVIEW_REQUIRED"})
     body = response.json()
@@ -136,6 +151,7 @@ def test_case_detail_returns_safe_detail(client):
     assert "analyst_summary" in body
     assert "merchant_safe_explanation" in body
     assert "triggered_rules" in body
+    assert "triggered_rule_explanations" in body
     assert "evidence_checklist" in body
     assert "policy_explanation" in body
     serialized = json.dumps(body)
