@@ -1,7 +1,10 @@
 """Merchant Response page: simulates a merchant responding to an evidence
-request. No real file upload or URL fetching exists here -- evidence
-references are validated strings only, submitted through the existing
-POST /cases/{case_id}/evidence endpoint.
+request. Evidence references remain validated strings; an optional real
+file attachment can also be uploaded (Phase 2), submitted through
+POST /cases/{case_id}/evidence/{evidence_id}/attachments. The backend
+independently validates the file (extension allowlist, size cap,
+magic-byte content check) -- this page does not duplicate that logic, it
+only surfaces whatever the backend reports.
 """
 
 from __future__ import annotations
@@ -11,8 +14,6 @@ import streamlit as st
 from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
 from dashboard.components.common import render_error
 
-DEMO_MERCHANT_ACTOR = "merchant_demo_001"
-
 EXAMPLE_REFERENCES = [
     "invoice_demo_001.pdf",
     "delivery_proof_demo_001.pdf",
@@ -20,10 +21,12 @@ EXAMPLE_REFERENCES = [
     "seasonal_sale_summary_demo_001.txt",
 ]
 
+ALLOWED_ATTACHMENT_TYPES = ["pdf", "txt", "png", "jpg", "jpeg"]
+
 
 def render_merchant_response(client: ClearRiskAPIClient) -> None:
     st.title("Merchant Response")
-    st.caption("Simulates a merchant submitting a response to a review case. No real file upload exists.")
+    st.caption("Simulates a merchant submitting a response to a review case.")
 
     try:
         cases_response = client.list_cases(limit=100)
@@ -74,12 +77,34 @@ def render_merchant_response(client: ClearRiskAPIClient) -> None:
         "Evidence references (comma-separated, e.g. invoice_demo_001.pdf, refund_policy_demo_url)",
         key="merchant_evidence_references",
     )
+    uploaded_file = st.file_uploader(
+        "Optional file attachment", type=ALLOWED_ATTACHMENT_TYPES, key="merchant_evidence_attachment",
+    )
+    st.caption(f"Allowed types: {', '.join(ALLOWED_ATTACHMENT_TYPES)}. Max size 5 MB.")
 
     if st.button("Submit response", type="primary", key="submit_merchant_response"):
         evidence_references = [ref.strip() for ref in references_text.split(",") if ref.strip()]
         try:
-            client.submit_evidence(selected_case_id, DEMO_MERCHANT_ACTOR, explanation_text, evidence_references)
-            st.success("Evidence submitted. The case has moved to EVIDENCE_SUBMITTED.")
-            st.rerun()
+            submission = client.submit_evidence(selected_case_id, explanation_text, evidence_references)
         except DashboardAPIError as exc:
             render_error(exc)
+            return
+
+        if uploaded_file is not None:
+            try:
+                client.upload_attachment(
+                    selected_case_id,
+                    submission["evidence_id"],
+                    uploaded_file.name,
+                    uploaded_file.getvalue(),
+                    uploaded_file.type or "application/octet-stream",
+                )
+            except DashboardAPIError as exc:
+                # The text response was already submitted successfully --
+                # say so plainly instead of implying the whole thing failed.
+                st.warning(f"Evidence text was submitted, but the file attachment was rejected: {exc.message}")
+                st.rerun()
+                return
+
+        st.success("Evidence submitted. The case has moved to EVIDENCE_SUBMITTED.")
+        st.rerun()

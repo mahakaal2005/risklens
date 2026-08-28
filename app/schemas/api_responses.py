@@ -33,6 +33,7 @@ class AuditEventType(str, Enum):
     EVIDENCE_REQUEST_RECOMMENDED = "EVIDENCE_REQUEST_RECOMMENDED"
     MANUAL_REVIEW_RECOMMENDED = "MANUAL_REVIEW_RECOMMENDED"
     EVIDENCE_SUBMITTED = "EVIDENCE_SUBMITTED"
+    EVIDENCE_ATTACHMENT_UPLOADED = "EVIDENCE_ATTACHMENT_UPLOADED"
     REVIEW_STARTED = "REVIEW_STARTED"
     CASE_CLEARED = "CASE_CLEARED"
     CASE_MARKED_FALSE_POSITIVE = "CASE_MARKED_FALSE_POSITIVE"
@@ -65,6 +66,9 @@ class ErrorCode(str, Enum):
     METRICS_NOT_AVAILABLE = "METRICS_NOT_AVAILABLE"
     METRICS_ARTIFACT_INVALID = "METRICS_ARTIFACT_INVALID"
     INTERNAL_SAFE_ERROR = "INTERNAL_SAFE_ERROR"
+    AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED"
+    FORBIDDEN = "FORBIDDEN"
+    RATE_LIMITED = "RATE_LIMITED"
 
 
 class ErrorDetail(BaseModel):
@@ -95,6 +99,10 @@ class CaseSummary(BaseModel):
     created_at: dt.datetime
     updated_at: dt.datetime
     final_outcome: FinalOutcome | None = None
+    sla_hours: int | None = None
+    sla_deadline: dt.datetime | None = None
+    hours_until_deadline: float | None = None
+    sla_breached: bool = False
     synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
 
 
@@ -106,11 +114,20 @@ class CaseListResponse(BaseModel):
     synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
 
 
+class EvidenceAttachmentSummary(BaseModel):
+    attachment_id: str
+    original_filename: str
+    content_type: str
+    size_bytes: int
+    uploaded_at: dt.datetime
+
+
 class EvidenceSubmissionSummary(BaseModel):
     evidence_id: str
     submitted_at: dt.datetime
     status: str
     evidence_references: list[str]
+    attachments: list[EvidenceAttachmentSummary] = []
 
 
 class CaseDetailResponse(BaseModel):
@@ -135,6 +152,10 @@ class CaseDetailResponse(BaseModel):
     final_outcome: FinalOutcome | None
     reviewer_note: str | None
     evidence_submissions: list[EvidenceSubmissionSummary]
+    sla_hours: int | None = None
+    sla_deadline: dt.datetime | None = None
+    hours_until_deadline: float | None = None
+    sla_breached: bool = False
     synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
 
 
@@ -154,8 +175,11 @@ class AuditTimelineResponse(BaseModel):
 
 
 class ReviewActionRequest(BaseModel):
+    """No actor-id field: the reviewer's identity is derived entirely from
+    the authenticated session (Phase 2 auth), never from client input --
+    see docs/PHASE_2_AUTH_DESIGN.md Section 6."""
+
     action: ReviewActionAPI
-    reviewer_actor_id: str
     reviewer_note: str
 
 
@@ -166,7 +190,10 @@ class ReviewActionResponse(BaseModel):
 
 
 class EvidenceSubmissionRequestBody(BaseModel):
-    merchant_actor_id: str
+    """No actor-id field: the merchant's identity is derived entirely from
+    the authenticated session (Phase 2 auth), never from client input --
+    see docs/PHASE_2_AUTH_DESIGN.md Section 6."""
+
     merchant_explanation_text: str
     evidence_references: list[str] = []
 
@@ -177,6 +204,12 @@ class EvidenceSubmissionResponse(BaseModel):
     case_status: CaseStatus
     submitted_at: dt.datetime
     evidence_references: list[str]
+    new_audit_event: AuditEventResponse
+    synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
+
+
+class AttachmentUploadResponse(BaseModel):
+    attachment: EvidenceAttachmentSummary
     new_audit_event: AuditEventResponse
     synthetic_data_notice: str = SYNTHETIC_DATA_NOTICE
 

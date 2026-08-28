@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import json
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.api.dependencies import get_current_user
+from app.db.models import User
 from app.schemas.api_responses import MetricsResponse
 from ml.evaluation_report import DEFAULT_REPORT_PATH, ReportNotFoundError, load_report, validate_report
 
@@ -30,7 +32,7 @@ INVALID_MESSAGE = (
 
 
 @router.get("/metrics", response_model=MetricsResponse)
-def get_metrics_route() -> MetricsResponse:
+def get_metrics_route(user: User = Depends(get_current_user)) -> MetricsResponse:
     try:
         report = load_report(DEFAULT_REPORT_PATH)
     except ReportNotFoundError:

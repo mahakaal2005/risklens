@@ -31,9 +31,19 @@
  `DATA_DICTIONARY.md`); if a lower-level synthetic transaction stream is used internally
  to build merchant-week aggregates, it must follow the same synthetic-token rule.
 
- Merchant appeal evidence is a free-text field plus fake evidence filenames/URLs only
- (e.g. `invoice_demo_001.pdf`) — no real file upload pipeline exists or is planned for
- Phase 1.
+ Merchant appeal evidence is a free-text field plus evidence filename references. No
+ real file upload pipeline exists or is planned for Phase 1 -- Phase 1's evidence
+ references are simulated strings only (e.g. `invoice_demo_001.pdf`).
+
+ **Phase 2 adds a real file upload pipeline** (implemented -- see
+ `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`): local filesystem storage only
+ (`data/evidence_attachments/`, gitignored), server-generated filenames (the
+ client's filename is display-only, never used in a filesystem path),
+ extension allowlist (`pdf`/`txt`/`png`/`jpg`/`jpeg`), a 5 MB size cap enforced
+ at both the route and service layers, and a magic-byte content check so a
+ renamed executable cannot pass as an allowed type just because of its
+ filename. No malware/antivirus scanning exists -- an explicit, documented
+ limitation of this local demo, not an oversight.
 
  ### Simulated evidence restrictions (implemented, Milestone 5)
 
@@ -70,13 +80,49 @@
    any database table, service, or script in this codebase. All persisted case,
    evidence, and audit records use only synthetic merchant tokens and simulated data.
 
+ ## Local-demo authentication (implemented, Phase 2)
+
+ `app/services/auth_service.py` adds local login and three roles (`reviewer`,
+ `merchant`, `risk_manager`) -- see `docs/PHASE_2_AUTH_DESIGN.md` and
+ `docs/MILESTONE_9_AUTH.md` for the full design and as-built report. This is
+ **not** production-grade auth:
+
+ - Password hashing: stdlib `hashlib.pbkdf2_hmac` (260,000 iterations),
+   adequate for this local single-operator prototype, not a claim of
+   production password-security compliance.
+ - No MFA, no password reset flow, no login rate limiting/lockout, no
+   OAuth/SSO, no external identity provider.
+ - Sessions are opaque server-side tokens (not JWT) with a fixed 12-hour
+   expiry -- a local demo session, not a production refresh-token scheme.
+ - Accounts are seeded, fixed demo identities
+   (`scripts/seed_demo_users.py`) -- not a real user-registration system.
+ - Enforced at the FastAPI layer (every write endpoint requires a valid
+   session; the actor recorded in the audit log is derived from the
+   session, never from client-supplied input) -- real access control for
+   this prototype, not decoration, but still local-only.
+ - `POST /auth/login` is rate limited: 5 attempts/minute per client IP,
+   in-memory, single-process (`app/services/rate_limit.py`) -- resets on
+   restart and is not shared across workers/replicas, so this is a
+   local-demo mitigation, not a production rate-limiting solution.
+ - Every response carries `X-Content-Type-Options: nosniff` and
+   `X-Frame-Options: DENY`; all routes except `/docs`/`/redoc`/`/openapi.json`
+   additionally carry `Content-Security-Policy: default-src 'self'` (those
+   three are exempted because Swagger UI loads its JS/CSS from a public CDN).
+   `Strict-Transport-Security` is deliberately omitted -- this API serves
+   plain HTTP on localhost, where HSTS would be meaningless rather than
+   protective.
+
  ## Not implemented
- - Production authentication/authorization.
+ - Production-grade authentication hardening (MFA, password reset,
+   distributed/production-grade rate limiting, external identity provider --
+   see above for what's already implemented at local-demo grade).
  - Encryption at rest/in transit configuration.
  - Key management.
  - Secure secrets vault.
  - Tenant isolation.
- - Secure evidence-file upload pipeline.
+ - Malware/antivirus scanning for uploaded evidence attachments (the upload
+   pipeline itself is implemented at local-demo grade -- see above; scanning
+   uploaded content is the specific gap).
  - Penetration testing.
  - Regulatory compliance certification.
  - Incident response/on-call operations.

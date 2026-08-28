@@ -51,8 +51,12 @@
  python3 -m ml.generate_demo_cases           # builds 5 reviewer-ready case packets -> demo_data/demo_case_packets.json
  rm -f clearrisk_recover.db                  # optional: reset the local demo database
  python3 scripts/seed_demo_cases.py          # persists non-APPROVE demo packets as review cases in SQLite
+ python3 scripts/seed_demo_users.py          # prints local-demo login credentials once (Phase 2 auth)
  python3 scripts/demo_case_workflow.py       # walks two seeded cases through the full reviewer/evidence workflow
- python3 -m pytest tests/ -v                 # full test suite (289 tests as of Milestone 6)
+ python3 scripts/export_feedback_labels.py   # exports FALSE_POSITIVE/CONFIRMED_RISK resolutions -> ml/artifacts/feedback_label_overrides.json
+ python3 -m ml.retrain_with_feedback         # manually-triggered only; retrains + writes ml/artifacts/feedback_retrain_report.json
+ python3 scripts/import_merchant_csv.py      # validates + scores demo_data/external_import_fixtures/anonymized_merchant_export_demo.csv, persists real cases
+ python3 -m pytest tests/ -v                 # full test suite (474 tests -- Phase 2 complete)
  ```
 
  ### Running the API (local, synthetic-data demo only)
@@ -83,9 +87,9 @@
 
  (If that fails with `ModuleNotFoundError: No module named 'google.protobuf'`, your `streamlit` executable's shebang points at a different Python than the one Streamlit was installed into — use `python3 -m streamlit run dashboard/streamlit_app.py` instead.)
 
- Local dashboard URL: [http://localhost:8501](http://localhost:8501). Five pages: Overview, Review Queue, Case Detail, Merchant Response, Audit Timeline. The sidebar carries the synthetic-data disclaimer, a quiet backend-status line, and the active case ID; each page body opens with a one-line synthetic-data reminder. If the API isn't running, the dashboard shows a clear "Backend unavailable" message with the exact start command — it never falls back to mock data.
+ Local dashboard URL: [http://localhost:8501](http://localhost:8501). Sign in first with one of the three local-demo accounts printed by `python3 scripts/seed_demo_users.py` (Phase 2 authentication — see `docs/MILESTONE_9_AUTH.md`); the sidebar then shows only the pages your role can use. Five pages total: Overview, Review Queue, Case Detail, Merchant Response, Audit Timeline. The sidebar carries the synthetic-data disclaimer, a quiet backend-status line, and the active case ID; each page body opens with a one-line synthetic-data reminder. If the API isn't running, the dashboard shows a clear "Backend unavailable" message with the exact start command — it never falls back to mock data.
 
- Short demo flow: seed the demo cases (`python3 scripts/seed_demo_cases.py`) → open Review Queue → **click a case row** → **Open case detail** → **Request evidence** → Merchant Response (already on that case) → submit a simulated response → Case Detail → **Start review** → **Mark false positive** (or **Mark operational issue** / **Mark inconclusive** / **Escalate case**) → Audit Timeline to see every step recorded in order. Full walkthroughs (seasonal-sale, operational-issue, high-risk combined-loss) are in `docs/UI_DEMO_GUIDE.md`.
+ Short demo flow: seed the demo cases and users (`python3 scripts/seed_demo_cases.py && python3 scripts/seed_demo_users.py`) → sign in as `reviewer_demo` → Review Queue → **click a case row** → **Open case detail** → **Request evidence** → sign out, sign in as `merchant_demo` → Merchant Response (already on that case) → submit a simulated response → sign out, sign in as `reviewer_demo` → Case Detail → **Start review** → **Mark false positive** (or **Mark operational issue** / **Mark inconclusive** / **Escalate case**) → Audit Timeline to see every step recorded in order. Full walkthroughs (seasonal-sale, operational-issue, high-risk combined-loss) are in `docs/UI_DEMO_GUIDE.md`.
 
  **Synthetic-data boundaries:** the dashboard, like the API underneath it, never processes a real payment, holds settlement, freezes funds, bans a merchant, terminates an account, or makes a final fraud determination — every action is a recommendation or a reviewer/merchant workflow step, on synthetic data only.
 
@@ -132,10 +136,16 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  - `docs/MILESTONE_8_DASHBOARD.md` — dashboard page architecture, data flow, and safety controls
  - `docs/UI_DEMO_GUIDE.md` — exact startup commands and full demo walkthroughs for the Streamlit dashboard
  - `docs/RAZORPAY_ADAPTER.md` — the local Razorpay-shaped payment-event adapter: verified event names, generic event schema, merchant-week aggregation, and the fields it honestly cannot produce
+ - `docs/PHASE_2_AUTH_DESIGN.md` — the approved Phase 2 authentication design (data model, role/permission mapping, the breaking-change decision)
+ - `docs/MILESTONE_9_AUTH.md` — the as-built local-demo authentication report: bugs found, test results, how to run
+ - `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md` — real evidence-attachment file upload/download: validation layers, storage model, API/dashboard integration, known limitations
+ - `docs/PHASE_2_REVIEW_SLA_DESIGN.md` — computed (not stored) review SLA and simulated in-app breach notification: thresholds, clock-stop behavior, dashboard integration
+ - `docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md` — manually-triggered feedback retraining loop: label-correction rules, test-split-preservation guarantee, and a real end-to-end finding from live verification
+ - `docs/PHASE_2_EXTERNAL_DATA_IMPORT_DESIGN.md` — anonymized merchant-week CSV import: exact-schema validation, PII/prohibited-column rejection, and two real gaps found and fixed during live verification
 
  ## Status
 
- Milestones 1-8 implemented and approved: synthetic merchant-week data generation
+ Milestones 1-8 (Phase 1 MVP) implemented and approved: synthetic merchant-week data generation
  (Milestone 1), the feature-engineering and transparent rules engine (Milestone 2),
  the time-based split / Logistic Regression baseline / held-out evaluation (Milestone 3),
  deterministic explainability and reviewer case-packet generation (Milestone 4), SQLite
@@ -143,5 +153,24 @@ Reads local, synthetic JSON fixture files whose event names are modeled on Razor
  append-only application audit log (Milestone 5), a validated FastAPI read/workflow
  API layer over that same service layer (Milestone 6), a persisted offline evaluation
  report served by `GET /metrics` (Milestone 7), and a local Streamlit dashboard over the
- same API (Milestone 8). See `docs/IMPLEMENTATION_PLAN.md` for what remains
- (authentication, real integrations, and anything beyond this local Phase 1 prototype).
+ same API (Milestone 8).
+
+ **Phase 2 complete (per `CLAUDE.md`'s roadmap):** local-demo authentication
+ and three basic roles (`reviewer`/`merchant`/`risk_manager`, Milestone 9),
+ real evidence-attachment file upload/download for the `merchant` role, a
+ computed (not stored) review SLA with simulated in-app breach
+ notifications, a manually-triggered feedback retraining loop (reviewer
+ FALSE_POSITIVE/CONFIRMED_RISK resolutions correct training-split labels
+ only, held-out test split never touched), and anonymized merchant-week CSV
+ import (exact-schema validation, PII/prohibited-column rejection, scored
+ through the existing rules+model pipeline) — implemented and tested (474
+ tests passing), on branch `phase-2-auth-design`. Not production-grade
+ auth, no malware scanning on uploads, no real email/SMS/webhook
+ notifications, no automatic retraining, no willing real merchant yet (the
+ import path is exercised with a labeled synthetic fixture); see
+ `docs/MILESTONE_9_AUTH.md`, `docs/PHASE_2_EVIDENCE_ATTACHMENTS_DESIGN.md`,
+ `docs/PHASE_2_REVIEW_SLA_DESIGN.md`,
+ `docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md`,
+ `docs/PHASE_2_EXTERNAL_DATA_IMPORT_DESIGN.md`, and `SECURITY.md`. See
+ `docs/IMPLEMENTATION_PLAN.md` for what remains beyond this local Phase 1
+ prototype (Phase 3: production integration requiring a gateway partner).

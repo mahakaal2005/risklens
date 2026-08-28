@@ -12,8 +12,6 @@ import streamlit as st
 from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
 from dashboard.components.common import format_timestamp, render_error
 
-DEMO_REVIEWER_ACTOR = "analyst_demo_001"
-
 # case_status -> list of (action_value, safe_label)
 ACTIONS_BY_STATUS = {
     "OPEN": [
@@ -76,7 +74,7 @@ def render_reviewer_actions(client: ClearRiskAPIClient, case: dict) -> None:
             return
         action_value = action_values[selected_label]
         try:
-            client.submit_review_action(case["case_id"], action_value, DEMO_REVIEWER_ACTOR, note)
+            client.submit_review_action(case["case_id"], action_value, note)
             st.success(f"Action '{selected_label}' recorded.")
             st.rerun()
         except DashboardAPIError as exc:

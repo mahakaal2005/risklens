@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.api.routes import cases, evidence, health, metrics
+from app.api.routes import auth, cases, evidence, health, metrics
 from app.schemas.api_responses import SYNTHETIC_DATA_NOTICE, ErrorCode
 
 app = FastAPI(
@@ -24,7 +24,31 @@ app = FastAPI(
     version="0.1.0",
 )
 
+
+# FastAPI's own interactive docs load Swagger UI's JS/CSS from a public CDN,
+# so a strict same-origin CSP would silently break /docs and /redoc in the
+# browser. Those paths keep X-Content-Type-Options/X-Frame-Options but skip
+# the CSP header; every other response gets the full set.
+_CSP_EXEMPT_PATHS = {"/docs", "/redoc", "/openapi.json"}
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Basic security headers on every response -- part of the project's
+    standing pre-deploy security checklist. Strict-Transport-Security is
+    deliberately omitted: this API serves plain HTTP on localhost, and HSTS
+    over an insecure connection is meaningless (or actively wrong) rather
+    than protective."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    if request.url.path not in _CSP_EXEMPT_PATHS:
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+    return response
+
+
 app.include_router(health.router)
+app.include_router(auth.router)
 app.include_router(cases.router)
 app.include_router(evidence.router)
 app.include_router(metrics.router)

@@ -46,14 +46,16 @@ class ClearRiskAPIClient:
     """Thin wrapper around the FastAPI backend. Every method returns a
     plain dict (already-validated JSON) or raises DashboardAPIError."""
 
-    def __init__(self, base_url: str | None = None, timeout: float = DEFAULT_TIMEOUT_SECONDS):
+    def __init__(self, base_url: str | None = None, timeout: float = DEFAULT_TIMEOUT_SECONDS, session_token: str | None = None):
         self.base_url = (base_url or get_base_url()).rstrip("/")
         self.timeout = timeout
+        self.session_token = session_token
 
     def _request(self, method: str, path: str, json_body: dict | None = None, params: dict | None = None) -> dict:
         url = f"{self.base_url}{path}"
+        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
         try:
-            response = httpx.request(method, url, json=json_body, params=params, timeout=self.timeout)
+            response = httpx.request(method, url, json=json_body, params=params, timeout=self.timeout, headers=headers)
         except httpx.TimeoutException as exc:
             raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
         except httpx.ConnectError as exc:
@@ -90,6 +92,23 @@ class ClearRiskAPIClient:
     def health(self) -> dict:
         return self._request("GET", "/health")
 
+    def login(self, username: str, password: str) -> dict:
+        """Logs in and stores the returned session token on this client
+        instance so every subsequent call is authenticated. Returns the
+        full login response (role, actor_id, display_name, etc.) for the
+        caller to store in Streamlit session state."""
+        body = self._require_notice(self._request("POST", "/auth/login", json_body={"username": username, "password": password}))
+        self.session_token = body["session_token"]
+        return body
+
+    def logout(self) -> None:
+        if self.session_token:
+            try:
+                self._request("POST", "/auth/logout")
+            except DashboardAPIError:
+                pass  # best-effort -- the session will also just expire on its own
+        self.session_token = None
+
     def get_metrics(self) -> dict:
         # MetricsResponse always includes synthetic_data_notice, even in the
         # not_available case, so this check applies unconditionally.
@@ -120,10 +139,12 @@ class ClearRiskAPIClient:
 
     # -- Write endpoints ---------------------------------------------------
 
-    def submit_review_action(self, case_id: str, action: str, reviewer_actor_id: str, reviewer_note: str) -> dict:
+    def submit_review_action(self, case_id: str, action: str, reviewer_note: str) -> dict:
+        """No actor-id parameter: the reviewer's identity is derived
+        server-side from this client's session token, never sent by the
+        caller -- see docs/PHASE_2_AUTH_DESIGN.md Section 6."""
         body = {
             "action": action,
-            "reviewer_actor_id": reviewer_actor_id,
             "reviewer_note": reviewer_note,
         }
         return self._require_notice(self._request("POST", f"/cases/{case_id}/review-actions", json_body=body))
@@ -131,13 +152,73 @@ class ClearRiskAPIClient:
     def submit_evidence(
         self,
         case_id: str,
-        merchant_actor_id: str,
         merchant_explanation_text: str,
         evidence_references: list[str],
     ) -> dict:
+        """No actor-id parameter: the merchant's identity is derived
+        server-side from this client's session token, never sent by the
+        caller -- see docs/PHASE_2_AUTH_DESIGN.md Section 6."""
         body = {
-            "merchant_actor_id": merchant_actor_id,
             "merchant_explanation_text": merchant_explanation_text,
             "evidence_references": evidence_references,
         }
         return self._require_notice(self._request("POST", f"/cases/{case_id}/evidence", json_body=body))
+
+    def upload_attachment(
+        self,
+        case_id: str,
+        evidence_id: str,
+        filename: str,
+        content: bytes,
+        content_type: str,
+    ) -> dict:
+        """Real file upload (Phase 2) -- multipart, not JSON, so this method
+        bypasses _request() and builds its own httpx call. The backend
+        re-validates the file independently (extension allowlist, size cap,
+        magic-byte content check); this client does not duplicate that
+        validation, only surfaces whatever error the backend returns."""
+        url = f"{self.base_url}/cases/{case_id}/evidence/{evidence_id}/attachments"
+        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
+        try:
+            response = httpx.post(
+                url, files={"file": (filename, content, content_type)}, headers=headers, timeout=self.timeout,
+            )
+        except httpx.TimeoutException as exc:
+            raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
+        except httpx.ConnectError as exc:
+            raise DashboardAPIError(f"Could not connect to the local backend at {self.base_url}.") from exc
+        except httpx.HTTPError as exc:
+            raise DashboardAPIError("A network error occurred while contacting the local backend.") from exc
+
+        try:
+            body = response.json()
+        except ValueError as exc:
+            raise DashboardAPIError("The local backend returned a response that could not be read.") from exc
+
+        if response.status_code >= 400:
+            raise DashboardAPIError(self._extract_error_message(body))
+        return self._require_notice(body)
+
+    def download_attachment(self, case_id: str, evidence_id: str, attachment_id: str) -> tuple[bytes, str]:
+        """Returns (raw file bytes, content_type). Unlike every other method
+        here, the response body is not JSON, so this bypasses _request()
+        entirely."""
+        url = f"{self.base_url}/cases/{case_id}/evidence/{evidence_id}/attachments/{attachment_id}"
+        headers = {"Authorization": f"Bearer {self.session_token}"} if self.session_token else None
+        try:
+            response = httpx.get(url, headers=headers, timeout=self.timeout)
+        except httpx.TimeoutException as exc:
+            raise DashboardAPIError(f"The local backend at {self.base_url} timed out. Is it running?") from exc
+        except httpx.ConnectError as exc:
+            raise DashboardAPIError(f"Could not connect to the local backend at {self.base_url}.") from exc
+        except httpx.HTTPError as exc:
+            raise DashboardAPIError("A network error occurred while contacting the local backend.") from exc
+
+        if response.status_code >= 400:
+            try:
+                body = response.json()
+            except ValueError:
+                raise DashboardAPIError("The local backend rejected the download request.")
+            raise DashboardAPIError(self._extract_error_message(body))
+
+        return response.content, response.headers.get("content-type", "application/octet-stream")

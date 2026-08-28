@@ -8,6 +8,7 @@ from app.db.database import create_db_engine, init_db, make_session_factory, ses
 from app.main import app
 from app.services.case_service import create_case_from_packet
 from ml.features import LABEL_COLUMN, LATENT_STATE_COLUMN
+from tests.conftest import make_bearer_headers
 
 FORBIDDEN_ENFORCEMENT_WORDS = ["freeze", "ban", "terminate", "hold settlement", "reject payment", "process payment", "issue refund", "transfer funds"]
 
@@ -38,8 +39,50 @@ def client(tmp_path):
         for packet in packets.values():
             create_case_from_packet(session, packet)
 
-    yield TestClient(app)
+    reviewer_headers = make_bearer_headers(session_factory, "reviewer", "analyst_demo_001", "Demo Reviewer")
+    test_client = TestClient(app)
+    test_client.headers.update(reviewer_headers)
+    yield test_client
     app.dependency_overrides.clear()
+
+
+def test_case_summary_includes_sla_fields(client):
+    response = client.get("/cases", params={"recommendation": "MANUAL_REVIEW_REQUIRED"})
+    body = response.json()
+    assert body["items"], "expected at least one MANUAL_REVIEW_REQUIRED demo case"
+    item = body["items"][0]
+    assert item["sla_hours"] == 48
+    assert item["sla_deadline"] is not None
+    assert item["sla_breached"] is False  # freshly seeded, well within the window
+
+
+def test_case_detail_includes_sla_fields(client):
+    list_response = client.get("/cases", params={"recommendation": "REQUEST_EVIDENCE"})
+    case_id = list_response.json()["items"][0]["case_id"]
+    response = client.get(f"/cases/{case_id}")
+    body = response.json()
+    assert body["sla_hours"] == 72
+    assert body["sla_deadline"] is not None
+    assert body["hours_until_deadline"] > 0
+
+
+def test_resolved_case_reports_sla_not_breached_regardless_of_age(client):
+    list_response = client.get("/cases", params={"recommendation": "REQUEST_EVIDENCE"})
+    case_id = list_response.json()["items"][0]["case_id"]
+
+    client.post(f"/cases/{case_id}/review-actions", json={"action": "CLEAR_CASE", "reviewer_note": "closing"})
+    response = client.get(f"/cases/{case_id}")
+    body = response.json()
+    assert body["case_status"] == "RESOLVED"
+    assert body["sla_breached"] is False
+    assert body["hours_until_deadline"] is None
+
+
+def test_unauthenticated_request_is_rejected(client):
+    unauthenticated = TestClient(app)  # deliberately no Authorization header
+    response = unauthenticated.get("/cases")
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "AUTHENTICATION_REQUIRED"
 
 
 def test_list_cases_returns_paginated_safe_summaries(client):
@@ -163,7 +206,7 @@ def test_valid_reviewer_action_succeeds_and_creates_audit_events(client):
 
     response = client.post(
         f"/cases/{case_id}/review-actions",
-        json={"action": "REQUEST_EVIDENCE", "reviewer_actor_id": "analyst_demo_001", "reviewer_note": "Please provide evidence."},
+        json={"action": "REQUEST_EVIDENCE", "reviewer_note": "Please provide evidence."},
     )
     assert response.status_code == 200
     body = response.json()
@@ -179,7 +222,7 @@ def test_invalid_reviewer_transition_returns_409_with_no_mutation(client):
 
     response = client.post(
         f"/cases/{case_id}/review-actions",
-        json={"action": "START_REVIEW", "reviewer_actor_id": "analyst_demo_001", "reviewer_note": "trying to skip ahead"},
+        json={"action": "START_REVIEW", "reviewer_note": "trying to skip ahead"},
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "INVALID_CASE_TRANSITION"
@@ -195,7 +238,7 @@ def test_empty_reviewer_note_returns_422(client):
 
     response = client.post(
         f"/cases/{case_id}/review-actions",
-        json={"action": "REQUEST_EVIDENCE", "reviewer_actor_id": "analyst_demo_001", "reviewer_note": "   "},
+        json={"action": "REQUEST_EVIDENCE", "reviewer_note": "   "},
     )
     assert response.status_code == 422
 
@@ -206,7 +249,7 @@ def test_unknown_reviewer_action_returns_422(client):
 
     response = client.post(
         f"/cases/{case_id}/review-actions",
-        json={"action": "FREEZE_ACCOUNT", "reviewer_actor_id": "analyst_demo_001", "reviewer_note": "note"},
+        json={"action": "FREEZE_ACCOUNT", "reviewer_note": "note"},
     )
     assert response.status_code == 422
 

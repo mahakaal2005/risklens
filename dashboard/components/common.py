@@ -88,6 +88,21 @@ def format_timestamp(value: str | None) -> str:
     return str(value).replace("T", " ").split(".")[0]
 
 
+def sla_display(case: dict) -> str:
+    """One-line SLA status for a case, from the API's computed sla_* fields
+    -- never computed client-side, and never a stand-in for a real
+    notification (see docs/PHASE_2_REVIEW_SLA_DESIGN.md)."""
+    if case.get("sla_hours") is None:
+        return "N/A"
+    if case.get("case_status") in ("RESOLVED", "ESCALATED"):
+        return "Closed"
+    if case.get("sla_breached"):
+        hours_overdue = abs(case.get("hours_until_deadline") or 0)
+        return f"⏰ Overdue by {hours_overdue:.1f}h"
+    hours_remaining = case.get("hours_until_deadline")
+    return f"{hours_remaining:.1f}h left" if hours_remaining is not None else "N/A"
+
+
 def safe_get(data: dict, key: str, default="—"):
     value = data.get(key)
     return value if value not in (None, "") else default

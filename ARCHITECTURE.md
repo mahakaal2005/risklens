@@ -99,16 +99,17 @@
 
 | Component | Responsibility | Phase 1 status | Phase 2/3 need |
 |---|---|---|---|
-| Synthetic data generator | Creates labelled, non-identifying merchant-week demo data from a 5-state latent simulation | Planned for Phase 1 MVP | Replace/augment only with authorized, de-identified data |
+| Synthetic data generator | Creates labelled, non-identifying merchant-week demo data from a 5-state latent simulation | Planned for Phase 1 MVP | **External anonymized CSV import: implemented, Phase 2** (`ml/external_data_import.py` + `scripts/import_merchant_csv.py` -- exact-schema validation, PII/prohibited-column rejection, scores through the existing rules+model pipeline; exercised with a labeled synthetic fixture, no willing merchant yet; see docs/PHASE_2_EXTERNAL_DATA_IMPORT_DESIGN.md) |
 | Feature builder | Produces refund-rate trend, chargeback-rate trend, volume trend, delivery-evidence coverage, support-ticket trend features per merchant-week | Planned for Phase 1 MVP | Extend for gateway/webhook-shaped event fields; add drift monitoring (Evidently) |
 | Rules engine | Evaluates documented refund/chargeback-trend rules | Planned for Phase 1 MVP | Policy management, approvals, version governance |
-| ML model (Logistic Regression) | Produces interpretable `label_high_loss_next_30d` probability | Planned for Phase 1 MVP | Model validation, monitoring, champion/challenger models |
+| ML model (Logistic Regression) | Produces interpretable `label_high_loss_next_30d` probability | Planned for Phase 1 MVP | **Feedback/retraining workflow: implemented, Phase 2** (`ml/retrain_with_feedback.py` -- manually triggered only, reviewer FALSE_POSITIVE/CONFIRMED_RISK resolutions correct training-split labels only, held-out test split never touched; see docs/PHASE_2_FEEDBACK_RETRAINING_DESIGN.md); model validation/monitoring/champion-challenger remain unbuilt |
 | Explanation layer | Converts signals into safe explanations with concrete before/after trend values | Planned for Phase 1 MVP | Extend explanation storage for evidence-attachment context; no change to safety rules |
-| Policy engine | Selects a recommendation, never enforcement | Planned for Phase 1 MVP | Configurable review SLA, notification simulation, approval workflow |
-| Case service | Creates/retrieves/updates review cases (one per flagged merchant-week) | Planned for Phase 1 MVP | Authentication and basic roles (Phase 2); real reviewer queues and escalation (Phase 3) |
-| Appeals service | Stores simulated merchant evidence and appeal note | Planned for Phase 1 MVP | Evidence attachments (Phase 2); secure evidence storage (Phase 3) |
+| Policy engine | Selects a recommendation, never enforcement | Planned for Phase 1 MVP | **Review SLA and notification simulation: implemented, Phase 2** (`app/services/sla_service.py` -- computed at read time, no scheduler; see docs/PHASE_2_REVIEW_SLA_DESIGN.md); approval workflow remains unbuilt |
+| Auth service | Local login, session tokens, 3 roles (`reviewer`/`merchant`/`risk_manager`) | Out of scope (Phase 1) | **Implemented, Phase 2** (`app/services/auth_service.py`) — local-demo grade only (see SECURITY.md); real identity provider / MFA / production hardening remains Phase 3 |
+| Case service | Creates/retrieves/updates review cases (one per flagged merchant-week) | Planned for Phase 1 MVP | **Authentication and basic roles: implemented, Phase 2** (actor derived from session, not client input; merchant-role reads filtered to own `merchant_id`); real reviewer queues and escalation (Phase 3) |
+| Appeals service | Stores simulated merchant evidence and appeal note | Planned for Phase 1 MVP | **Evidence attachments: implemented, Phase 2** (`app/services/evidence_attachment_service.py` -- local filesystem, extension allowlist, magic-byte content check, 5MB cap, no malware scanning); secure/cloud evidence storage (Phase 3) |
 | Audit service | Appends event history | Planned for Phase 1 MVP | Tamper-evident retention and access controls |
-| Dashboard | Displays cases, explanation, outcomes, metrics, rules-only vs. rules+ML comparison | Planned for Phase 1 MVP | Authentication/roles (Phase 2); formal compliance/privacy reporting (Phase 3) |
+| Dashboard | Displays cases, explanation, outcomes, metrics, rules-only vs. rules+ML comparison | Planned for Phase 1 MVP | **Authentication/roles: implemented, Phase 2** (login gate, role-based page visibility); formal compliance/privacy reporting (Phase 3) |
 | Gateway connector | Would ingest real gateway events | Out of scope | Requires partnership and approved API/data contract |
 | Real enforcement service | Holds/funds restrictions/termination | Prohibited | Human-authorized gateway workflow only |
 

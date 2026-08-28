@@ -4,14 +4,45 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app.api.routes.metrics as metrics_module
+from app.api.dependencies import get_db
+from app.db.database import create_db_engine, init_db, make_session_factory
 from app.main import app
 from ml.evaluate_model import evaluate
 from ml.evaluation_report import build_report, save_report
+from tests.conftest import make_bearer_headers
 
 
 @pytest.fixture()
-def client():
-    return TestClient(app)
+def client(tmp_path):
+    # /metrics now requires authentication, which requires a DB session --
+    # this must stay isolated from the developer's real clearrisk_recover.db,
+    # exactly like every other test file's client fixture (see
+    # app/api/dependencies.py's docstring).
+    db_path = tmp_path / "test_api_metrics.db"
+    engine = create_db_engine(f"sqlite:///{db_path}")
+    init_db(engine)
+    session_factory = make_session_factory(engine)
+
+    def override_get_db():
+        session = session_factory()
+        try:
+            yield session
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    # Any authenticated role may read /metrics -- risk_manager is the most
+    # representative choice since it is the read-only reporting role.
+    headers = make_bearer_headers(session_factory, "risk_manager", "riskmanager_demo_001", "Demo Risk Manager")
+    test_client = TestClient(app)
+    test_client.headers.update(headers)
+    yield test_client
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture(scope="module")
