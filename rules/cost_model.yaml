@@ -1,0 +1,60 @@
+# Cost model — ClearRisk Recover, Day 2 upgrade sprint.
+#
+# ============================ READ THIS FIRST ============================
+# EVERY DIGIT IN THIS FILE IS AN ASSUMPTION, NOT A VERIFIED FACT.
+#
+# These are illustrative rupee figures chosen to make the cost/benefit
+# TRADEOFF STRUCTURE visible on synthetic data. They are NOT:
+#   - Razorpay's costs, or any real payment provider's costs
+#   - derived from any real merchant, chargeback, or refund dataset
+#   - benchmarked against published industry figures
+#   - validated by anyone with operational cost data
+#
+# No public per-merchant chargeback-cost dataset exists to calibrate these
+# against; provider cost structures are commercially confidential. Anyone
+# using this model with real money must replace every value below with their
+# own measured costs. The SENSITIVITY analysis in ml/cost_model.py exists
+# precisely because the conclusion depends on these guesses -- it reports how
+# the recommended threshold moves as the cost ratio changes, so a reader can
+# locate their own ratio rather than inheriting ours.
+#
+# All numeric parameters live here, not in Python, matching the convention
+# already used by rules/risk_rules.yaml.
+# =========================================================================
+
+version: "0.1.0"
+
+# Per-decision costs, in Indian rupees, for one merchant-week decision.
+costs_inr:
+
+  # Cost of one human analyst reviewing one flagged merchant-week.
+  # ASSUMPTION: ~30 minutes of a payment-risk analyst's loaded time.
+  review_cost: 250
+
+  # Expected net loss when a merchant genuinely enters an elevated
+  # refund/chargeback-loss state and NOBODY reviewed them in time.
+  # ASSUMPTION: representative net exposure per merchant-week, covering
+  # unrecovered refunds, chargeback amounts, and scheme fees.
+  missed_loss: 18000
+
+  # Additional cost of reviewing a merchant who turns out to be fine:
+  # support handling time plus the goodwill cost of asking a healthy
+  # merchant for evidence. Charged ON TOP OF review_cost for a false
+  # positive. This is deliberately non-zero -- a model that treats
+  # unnecessary merchant friction as free will always over-flag.
+  # ASSUMPTION.
+  false_positive_friction: 150
+
+# Fraction of the loss actually avoided when a merchant IS caught in time.
+# Reviewing early does not recover everything: some disputes are already in
+# flight, and the recommended actions are evidence requests and monitoring,
+# never enforcement. ASSUMPTION.
+#
+# Setting this to 1.0 would model human review as perfectly effective, which
+# would flatter every result in this project and is not defensible.
+recovery_rate: 0.55
+
+# Cost-ratio grid for the sensitivity analysis: each value is a candidate
+# missed_loss / review_cost ratio. The default assumption above gives
+# 18000 / 250 = 72.
+sensitivity_cost_ratios: [10, 25, 50, 72, 100, 200, 500]
