@@ -12,3 +12,10 @@ data/external/
 
 # Uploaded evidence attachments (Phase 2, local demo only) -- never commit.
 data/evidence_attachments/
+
+# Local AI-assistant tooling config/instructions -- kept locally, never committed.
+CLAUDE.md
+.mcp.json
+.claude-flow/
+.claude-skills-log.jsonl
+scripts/log-skill-usage.sh

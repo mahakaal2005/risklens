@@ -142,7 +142,6 @@ Python, FastAPI, Streamlit, SQLite, Pandas, scikit-learn, PyYAML, Joblib.
 - `MODEL_CARD.md` — model scope, held-out evaluation, comparison baselines, scenario-difficulty breakdown, and limitations
 - `SECURITY.md` — MVP security boundaries
 - `RESEARCH.md` — evidence, assumptions, and open questions
-- `CLAUDE.md` — project identity, scope, and truthfulness rules this whole repo follows
 
 ## Status
 
