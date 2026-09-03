@@ -1,0 +1,14 @@
+# Streamlit theme -- built-in theming only, no external CSS/fonts/CDN.
+# Palette references Razorpay's clean fintech dashboard aesthetic (cool
+# navy ink, blue accent, restrained neutral surfaces) as a visual cue only
+# -- not a claim of Razorpay integration or affiliation.
+[theme]
+base = "light"
+primaryColor = "#3395FF"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F1F4F9"
+textColor = "#0B1F3A"
+font = "sans serif"
+
+[server]
+headless = true

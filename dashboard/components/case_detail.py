@@ -30,26 +30,27 @@ RULE_LABELS = {
 def _render_case_header(case: dict) -> None:
     """Compact identity strip. Everything a reviewer needs to know who and
     what they are looking at, without a screen of key/value markdown."""
-    cols = st.columns(4)
-    cols[0].markdown(f"**Merchant**  \n`{case['merchant_id']}`")
-    cols[1].markdown(f"**Week start**  \n{case['week_start']}")
-    cols[2].markdown(f"**Status**  \n{case['case_status']}")
-    with cols[3]:
-        st.markdown("**Risk signal**")
-        render_intensity_badge(case.get("risk_signal_intensity"))
+    with st.container(border=True):
+        cols = st.columns(4)
+        cols[0].markdown(f"**Merchant**  \n`{case['merchant_id']}`")
+        cols[1].markdown(f"**Week start**  \n{case['week_start']}")
+        cols[2].markdown(f"**Status**  \n{case['case_status']}")
+        with cols[3]:
+            st.markdown("**Risk signal**")
+            render_intensity_badge(case.get("risk_signal_intensity"))
 
-    st.markdown(f"**Recommended workflow action:** {case['recommendation']}")
+        st.markdown(f"**Recommended workflow action:** {case['recommendation']}")
 
-    sla_text = sla_display(case)
-    if case.get("sla_breached"):
-        st.warning(
-            f"Review SLA: {sla_text} (simulated in-app indicator only — no real email/SMS notification exists).",
-            icon="⏰",
-        )
-    elif sla_text != "N/A":
-        st.caption(f"Review SLA: {sla_text}")
+        sla_text = sla_display(case)
+        if case.get("sla_breached"):
+            st.warning(
+                f"Review SLA: {sla_text} (simulated in-app indicator only — no real email/SMS notification exists).",
+                icon="⏰",
+            )
+        elif sla_text != "N/A":
+            st.caption(f"Review SLA: {sla_text}")
 
-    st.caption(case.get("synthetic_data_notice", ""))
+        st.caption(case.get("synthetic_data_notice", ""))
 
 
 def _render_analyst_detail(case: dict) -> None:

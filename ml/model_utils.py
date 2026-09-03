@@ -51,6 +51,11 @@ NEAR_PERFECT_PR_AUC = 0.98
 NEAR_PERFECT_PRECISION = 0.98
 NEAR_PERFECT_RECALL = 0.98
 
+THRESHOLD_GRID = np.round(np.arange(0.05, 0.951, 0.05), 2)
+FBETA_BETA = 2.0
+MIN_PRECISION = 0.30
+MAX_FALSE_POSITIVE_RATE = 0.20
+
 
 def build_preprocessing_pipeline() -> ColumnTransformer:
     numeric_pipeline = Pipeline([
@@ -189,6 +194,97 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_score: np.ndarray 
         metrics["pr_auc"] = None
         metrics["roc_auc_secondary"] = None
     return metrics
+
+
+def select_threshold(y_val: np.ndarray, val_probs: np.ndarray) -> dict:
+    """Selects the validation threshold maximizing F-beta(2), subject to
+    precision >= MIN_PRECISION and false-positive rate <= MAX_FALSE_POSITIVE_RATE.
+    Falls back to the unconstrained F-beta(2) maximizer, clearly flagged, if
+    no threshold satisfies both constraints. Held-out test data is never
+    used here. Shared by every training script (Logistic Regression,
+    Random Forest, Gradient Boosting) so threshold-selection logic is
+    defined once, not copied per model.
+    """
+    candidates = []
+    for t in THRESHOLD_GRID:
+        preds = (val_probs >= t).astype(int)
+        metrics = compute_metrics(y_val, preds, val_probs)
+        candidates.append({"threshold": float(t), **metrics})
+
+    constrained = [
+        c for c in candidates
+        if c["precision"] >= MIN_PRECISION and c["false_positive_rate"] <= MAX_FALSE_POSITIVE_RATE
+    ]
+
+    if constrained:
+        best = max(constrained, key=lambda c: c["f2"])
+        return {
+            "selected_threshold": best["threshold"],
+            "selection_method": "f2_maximizing_subject_to_constraints",
+            "constraints_met": True,
+            "min_precision_constraint": MIN_PRECISION,
+            "max_fpr_constraint": MAX_FALSE_POSITIVE_RATE,
+            "candidates": candidates,
+            "selected_candidate_metrics": best,
+        }
+
+    fallback = max(candidates, key=lambda c: c["f2"])
+    return {
+        "selected_threshold": fallback["threshold"],
+        "selection_method": "f2_maximizing_unconstrained_fallback",
+        "constraints_met": False,
+        "min_precision_constraint": MIN_PRECISION,
+        "max_fpr_constraint": MAX_FALSE_POSITIVE_RATE,
+        "candidates": candidates,
+        "selected_candidate_metrics": fallback,
+        "fallback_reason": (
+            f"No threshold in the 0.05-0.95 grid met precision >= {MIN_PRECISION} AND "
+            f"false-positive rate <= {MAX_FALSE_POSITIVE_RATE} simultaneously on validation data. "
+            "Falling back to the threshold that maximizes F-beta(2) alone."
+        ),
+    }
+
+
+def compute_scenario_difficulty(df: pd.DataFrame, latent_state_column: str, label_column: str, method_predictions: dict[str, np.ndarray]) -> list[dict]:
+    """Per-latent-state difficulty breakdown for the held-out test set.
+
+    Generalizes the ad hoc seasonal_false_positives/early_hidden_false_negatives
+    counts into a systematic per-scenario view: for every latent state
+    actually present, report how prevalent the positive label is within
+    that state, and how well each method (rules-only, each ML model,
+    combined) recovers those positives -- some states (e.g.
+    early_hidden_risk) are supposed to be hard to catch by design, and this
+    makes that difficulty visible rather than averaging it away in one
+    aggregate number.
+    """
+    results = []
+    for state in sorted(df[latent_state_column].unique()):
+        state_mask = (df[latent_state_column] == state).to_numpy()
+        row_count = int(state_mask.sum())
+        y_state = df.loc[state_mask, label_column].to_numpy()
+        positive_count = int(y_state.sum())
+        positive_rate = round(float(y_state.mean()), 4) if row_count else None
+
+        method_breakdown = {}
+        for method_name, y_pred in method_predictions.items():
+            pred_state = np.asarray(y_pred)[state_mask]
+            predicted_positive_rate = round(float(pred_state.mean()), 4) if row_count else None
+            if positive_count > 0:
+                recall_within_state = round(float(pred_state[y_state == 1].mean()), 4)
+            else:
+                recall_within_state = None
+            method_breakdown[method_name] = {
+                "predicted_positive_rate": predicted_positive_rate,
+                "recall_within_state": recall_within_state,
+            }
+
+        results.append({
+            "state": state,
+            "row_count": row_count,
+            "positive_rate": positive_rate,
+            "methods": method_breakdown,
+        })
+    return results
 
 
 def check_near_perfect(metrics: dict) -> tuple[bool, str]:

@@ -114,6 +114,16 @@ def test_metrics_returns_available_summary_when_artifact_valid(client, monkeypat
     assert body["combined_policy_metrics"]["pr_auc"] == real_report["methods"]["combined_policy"]["pr_auc"]
     assert "do not prove real-world chargeback-risk performance" in body["limitation"]
 
+    assert body["scenario_difficulty"] == real_report["scenario_difficulty"]
+    if "random_forest" in real_report["methods"]:
+        assert body["random_forest_metrics"]["precision"] == real_report["methods"]["random_forest"]["precision"]
+    if "gradient_boosting" in real_report["methods"]:
+        assert body["gradient_boosting_metrics"]["precision"] == real_report["methods"]["gradient_boosting"]["precision"]
+
+    serialized = json.dumps(body)
+    for prohibited in ["stable_merchant", "seasonal_sale_legitimate_returns", "operational_fulfilment_failure", "high_risk_merchant_behaviour"]:
+        assert prohibited not in serialized
+
 
 def test_metrics_never_trains_or_evaluates_on_request(client, monkeypatch, tmp_path):
     import ml.train_baseline_model as train_module

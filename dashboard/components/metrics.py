@@ -28,8 +28,10 @@ HONEST_LIMITATION = (
 )
 
 METHOD_GUIDANCE = [
-    ("Logistic Regression", "Lower false-positive rate — best for a low-friction early-warning dashboard."),
-    ("Combined policy", "Higher recall — best for a conservative risk-operations queue; the reviewer handles more cases."),
+    ("Logistic Regression", "Lower false-positive rate, fully interpretable — the model actually used for live case scoring."),
+    ("Random Forest", "Comparison baseline only (not used for live scoring) — shown to check whether added complexity earns better held-out performance."),
+    ("Gradient Boosting", "Comparison baseline only (not used for live scoring) — same purpose as Random Forest, a different model family."),
+    ("Combined policy", "Higher recall — best for a conservative risk-operations queue; the reviewer handles more cases. Built on Logistic Regression, the live-scoring model."),
     ("Rules-only", "Fully transparent fallback, but lower measured performance on synthetic test data."),
 ]
 
@@ -37,6 +39,8 @@ METHOD_GUIDANCE = [
 METHOD_ROWS = [
     ("Rules-only", "rules_only_metrics"),
     ("Logistic Regression", "logistic_regression_metrics"),
+    ("Random Forest", "random_forest_metrics"),
+    ("Gradient Boosting", "gradient_boosting_metrics"),
     ("Combined policy", "combined_policy_metrics"),
 ]
 
@@ -64,10 +68,38 @@ def _comparison_rows(metrics: dict) -> list[dict]:
     return rows
 
 
+def _render_at_a_glance(client: ClearRiskAPIClient) -> None:
+    """Quick case-load summary so the Overview page opens with something
+    concrete, not just prose -- mirrors the Review Queue's summary cards
+    using the same list_cases() call, no new endpoint needed."""
+    try:
+        cases_response = client.list_cases(limit=100)
+    except DashboardAPIError:
+        return  # Overview's own model-metrics section still renders; this is a bonus strip.
+
+    items = cases_response.get("items", [])
+    if not items:
+        return
+
+    open_count = sum(1 for item in items if item.get("case_status") == "OPEN")
+    escalated_count = sum(1 for item in items if item.get("case_status") == "ESCALATED")
+    breached_count = sum(1 for item in items if item.get("sla_breached"))
+
+    cols = st.columns(4)
+    cols[0].metric("Total cases", len(items))
+    cols[1].metric("Open", open_count)
+    cols[2].metric("Escalated", escalated_count)
+    cols[3].metric("SLA breached", breached_count)
+
+
 def render_overview(client: ClearRiskAPIClient) -> None:
-    st.title("ClearRisk Recover")
-    st.subheader("Explainable early warning for merchant refund and chargeback spikes.")
-    st.write(PRODUCT_EXPLANATION)
+    with st.container(border=True):
+        st.title("ClearRisk Recover")
+        st.subheader("Explainable early warning for merchant refund and chargeback spikes.")
+        st.write(PRODUCT_EXPLANATION)
+
+    st.markdown("#### At a glance")
+    _render_at_a_glance(client)
 
     st.markdown("#### Model comparison — held-out synthetic test data")
 
@@ -86,20 +118,36 @@ def render_overview(client: ClearRiskAPIClient) -> None:
         st.caption(metrics.get("message", ""))
         return
 
-    st.dataframe(_comparison_rows(metrics), width="stretch", hide_index=True)
+    with st.container(border=True):
+        st.dataframe(_comparison_rows(metrics), width="stretch", hide_index=True)
 
-    threshold = metrics.get("selected_threshold")
-    st.caption(
-        f"Operating threshold: **{threshold if threshold is not None else '—'}** · {THRESHOLD_EXPLANATION}"
-    )
-
-    with st.expander("How to read this comparison"):
-        for name, guidance in METHOD_GUIDANCE:
-            st.markdown(f"- **{name}**: {guidance}")
+        threshold = metrics.get("selected_threshold")
         st.caption(
-            "False-positive rate is the share of non-elevated merchant-weeks that were still "
-            "routed for review — the direct cost of over-flagging good merchants."
+            f"Operating threshold: **{threshold if threshold is not None else '—'}** · {THRESHOLD_EXPLANATION}"
         )
+
+        with st.expander("How to read this comparison"):
+            for name, guidance in METHOD_GUIDANCE:
+                st.markdown(f"- **{name}**: {guidance}")
+            st.caption(
+                "False-positive rate is the share of non-elevated merchant-weeks that were still "
+                "routed for review — the direct cost of over-flagging good merchants."
+            )
+
+    scenario_difficulty = metrics.get("scenario_difficulty")
+    if scenario_difficulty:
+        with st.expander("Difficulty by scenario"):
+            st.caption(
+                "How well each method recovers the elevated-loss label within each demonstration "
+                "scenario — some scenarios are supposed to be harder to catch by design (see MODEL_CARD.md)."
+            )
+            scenario_rows = []
+            for entry in scenario_difficulty:
+                row = {"Scenario": entry["state"], "Rows": entry["row_count"], "Positive rate": entry["positive_rate"]}
+                for method_name, breakdown in entry.get("methods", {}).items():
+                    row[f"{method_name} recall"] = breakdown.get("recall_within_state")
+                scenario_rows.append(row)
+            st.dataframe(scenario_rows, width="stretch", hide_index=True)
 
     st.warning(HONEST_LIMITATION, icon="📊")
 

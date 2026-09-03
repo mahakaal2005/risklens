@@ -25,10 +25,12 @@ from ml.model_utils import (
     check_near_perfect,
     combined_policy,
     compute_metrics,
+    compute_scenario_difficulty,
     rules_only_positive_prediction,
 )
 from ml.rules_engine import score_merchant_week
 from ml.split_data import DEFAULT_CSV_PATH, load_and_split
+from ml.train_tree_models import TREE_MODELS
 
 DEFAULT_ARTIFACT_DIR = Path("ml/artifacts")
 DEFAULT_DATASET_METADATA_PATH = Path("demo_data/synthetic_data_metadata.json")
@@ -57,7 +59,14 @@ def count_early_hidden_false_negatives(df: pd.DataFrame, y_pred: np.ndarray) -> 
     return int(mask.sum())
 
 
-def evaluate_split(df: pd.DataFrame, pipeline, threshold: float) -> dict:
+def evaluate_split(df: pd.DataFrame, ml_pipelines: dict, threshold: float) -> dict:
+    """ml_pipelines maps a method name (e.g. "ml_only", "random_forest",
+    "gradient_boosting") to a fitted pipeline. "ml_only" (Logistic
+    Regression) is required -- it is also the model combined_policy() uses,
+    per the design decision to keep Logistic Regression as the sole
+    live-scoring model. Any other pipelines are evaluated the same way,
+    purely as comparison baselines.
+    """
     y_true = df[LABEL_COLUMN].values
 
     rules_results = _score_rules_for_split(df)
@@ -68,13 +77,22 @@ def evaluate_split(df: pd.DataFrame, pipeline, threshold: float) -> dict:
     rules_metrics["seasonal_false_positives"] = count_seasonal_false_positives(df, rules_pred)
     rules_metrics["early_hidden_false_negatives"] = count_early_hidden_false_negatives(df, rules_pred)
 
-    X = _design_matrix(df)
-    ml_probs = pipeline.predict_proba(X)[:, 1]
-    ml_pred = (ml_probs >= threshold).astype(int)
-    ml_metrics = compute_metrics(y_true, ml_pred, ml_probs)
-    ml_metrics["seasonal_false_positives"] = count_seasonal_false_positives(df, ml_pred)
-    ml_metrics["early_hidden_false_negatives"] = count_early_hidden_false_negatives(df, ml_pred)
+    results = {"rules_only": rules_metrics}
+    method_predictions_for_difficulty = {"rules_only": rules_pred}
 
+    X = _design_matrix(df)
+    ml_probs_by_method = {}
+    for method_name, pipeline in ml_pipelines.items():
+        probs = pipeline.predict_proba(X)[:, 1]
+        pred = (probs >= threshold).astype(int)
+        metrics = compute_metrics(y_true, pred, probs)
+        metrics["seasonal_false_positives"] = count_seasonal_false_positives(df, pred)
+        metrics["early_hidden_false_negatives"] = count_early_hidden_false_negatives(df, pred)
+        results[method_name] = metrics
+        method_predictions_for_difficulty[method_name] = pred
+        ml_probs_by_method[method_name] = probs
+
+    ml_probs = ml_probs_by_method["ml_only"]
     combined_decisions = [
         combined_policy(ml_probs[i], threshold, set(rules_results[i]["triggered_rules"]))
         for i in range(len(df))
@@ -87,8 +105,12 @@ def evaluate_split(df: pd.DataFrame, pipeline, threshold: float) -> dict:
     combined_metrics["seasonal_false_positives"] = count_seasonal_false_positives(df, combined_pred)
     combined_metrics["early_hidden_false_negatives"] = count_early_hidden_false_negatives(df, combined_pred)
     combined_metrics["recommendation_distribution"] = pd.Series([d.recommendation for d in combined_decisions]).value_counts().to_dict()
+    results["combined"] = combined_metrics
+    method_predictions_for_difficulty["combined"] = combined_pred
 
-    return {"rules_only": rules_metrics, "ml_only": ml_metrics, "combined": combined_metrics}
+    scenario_difficulty = compute_scenario_difficulty(df, LATENT_STATE_COLUMN, LABEL_COLUMN, method_predictions_for_difficulty)
+
+    return results, scenario_difficulty
 
 
 def run_investigation(df: pd.DataFrame, split_info: dict, feature_columns: list[str]) -> dict:
@@ -123,6 +145,24 @@ def run_investigation(df: pd.DataFrame, split_info: dict, feature_columns: list[
     return findings
 
 
+def _load_tree_model_pipelines(artifact_dir: Path) -> dict:
+    """Loads Random Forest / Gradient Boosting artifacts if present.
+    Missing artifacts degrade gracefully (a clear printed message, LR-only
+    evaluation continues) rather than raising -- consistent with the
+    project's "fail safely" principle; these are optional comparison
+    models, not part of the required scoring path.
+    """
+    pipelines = {}
+    for model_key, spec in TREE_MODELS.items():
+        model_path = artifact_dir / f"{spec['artifact_stem']}_v{spec['model_version']}.joblib"
+        if not model_path.exists():
+            print(f"[evaluate_model] {spec['display_name']} artifact not found at {model_path} -- skipping. "
+                  f"Run `python3 -m ml.train_tree_models` to generate it.")
+            continue
+        pipelines[model_key] = joblib.load(model_path)
+    return pipelines
+
+
 def evaluate(csv_path: Path = DEFAULT_CSV_PATH, artifact_dir: Path = DEFAULT_ARTIFACT_DIR) -> dict:
     split = load_and_split(csv_path)
     metadata_path = artifact_dir / f"logistic_regression_v{MODEL_VERSION}_metadata.json"
@@ -130,11 +170,13 @@ def evaluate(csv_path: Path = DEFAULT_CSV_PATH, artifact_dir: Path = DEFAULT_ART
 
     with open(metadata_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)
-    pipeline = joblib.load(model_path)
+    lr_pipeline = joblib.load(model_path)
     threshold = metadata["selected_threshold"]
 
-    validation_results = evaluate_split(split["validation"], pipeline, threshold)
-    test_results = evaluate_split(split["test"], pipeline, threshold)
+    ml_pipelines = {"ml_only": lr_pipeline, **_load_tree_model_pipelines(artifact_dir)}
+
+    validation_results, _ = evaluate_split(split["validation"], ml_pipelines, threshold)
+    test_results, scenario_difficulty = evaluate_split(split["test"], ml_pipelines, threshold)
 
     gate_outcomes = {}
     investigation_triggered = False
@@ -153,6 +195,7 @@ def evaluate(csv_path: Path = DEFAULT_CSV_PATH, artifact_dir: Path = DEFAULT_ART
         "split_info": split["split_info"],
         "validation_results": validation_results,
         "test_results": test_results,
+        "scenario_difficulty": scenario_difficulty,
         "gate_outcomes": gate_outcomes,
         "investigation_triggered": investigation_triggered,
         "investigation": investigation,
@@ -184,6 +227,12 @@ def main() -> None:
     print("\nHeld-out test results:")
     for name, metrics in result["test_results"].items():
         _print_metrics(name, metrics)
+
+    print("\nScenario difficulty (held-out test, by latent state):")
+    for entry in result["scenario_difficulty"]:
+        print(f"  {entry['state']}: rows={entry['row_count']} positive_rate={entry['positive_rate']}")
+        for method_name, breakdown in entry["methods"].items():
+            print(f"    {method_name}: recall_within_state={breakdown['recall_within_state']} predicted_positive_rate={breakdown['predicted_positive_rate']}")
 
     print("\nNear-perfect-score gate outcomes (held-out test):")
     for name, outcome in result["gate_outcomes"].items():

@@ -211,6 +211,15 @@ def run_baseline_sanity_check(df: pd.DataFrame) -> dict:
     X_test, _ = _build_design_matrix(test, encoded_columns=feature_columns)
     y_train, y_val, y_test = train[LABEL_COLUMN].values, val[LABEL_COLUMN].values, test[LABEL_COLUMN].values
 
+    # Median imputation, fit on train only -- mirrors the production
+    # pipeline's SimpleImputer(strategy="median") in ml/model_utils.py.
+    # Needed since v0.2.0's dataset injects a small, disclosed rate of
+    # missing values into some numeric candidate features.
+    train_medians = X_train.median(numeric_only=True)
+    X_train = X_train.fillna(train_medians)
+    X_val = X_val.fillna(train_medians)
+    X_test = X_test.fillna(train_medians)
+
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_val_scaled = scaler.transform(X_val)

@@ -40,17 +40,41 @@ NEAR_PERFECT_CONDITIONS_CHECKED = [
 
 EXCLUDED_MODEL_FIELDS = ["merchant_id", "week_start", "label_high_loss_next_30d", "latent_state_for_demo_only"]
 
+# Maps the internal latent-state token to a safe, generic scenario label for
+# the report -- mirrors the existing pattern of "seasonal_false_positives" /
+# "early_hidden_false_negatives" (a generic name tied to a state's role,
+# not the raw internal token) so the new scenario_difficulty section
+# doesn't introduce a new way for a prohibited raw state string to appear
+# in an aggregate, analyst-facing report.
+SCENARIO_LABEL_MAP = {
+    "stable_merchant": "stable",
+    "seasonal_sale_legitimate_returns": "seasonal_returns",
+    "operational_fulfilment_failure": "operational_failure",
+    "high_risk_merchant_behaviour": "high_risk_behavior",
+    "early_hidden_risk": "early_hidden_risk",
+}
+
 _METHOD_KEY_RENAME = {
     "rules_only": "rules_only",
     "ml_only": "logistic_regression",
+    "random_forest": "random_forest",
+    "gradient_boosting": "gradient_boosting",
     "combined": "combined_policy",
 }
 
 REQUIRED_TOP_LEVEL_KEYS = {
     "report_version", "generated_at", "data_mode", "synthetic_data_notice",
-    "dataset", "split", "model", "methods", "near_perfect_score_investigation", "limitations",
+    "dataset", "split", "model", "methods", "scenario_difficulty",
+    "near_perfect_score_investigation", "limitations",
 }
-REQUIRED_METHOD_NAMES = {"rules_only", "logistic_regression", "combined_policy"}
+# random_forest / gradient_boosting are comparison-only baselines (see
+# ml/train_tree_models.py) -- required whenever present in the evaluate()
+# result, but evaluate() degrades gracefully if their artifacts are
+# missing, so they are validated here only when the report actually
+# contains them (see the methods-required check below).
+CORE_REQUIRED_METHOD_NAMES = {"rules_only", "logistic_regression", "combined_policy"}
+OPTIONAL_METHOD_NAMES = {"random_forest", "gradient_boosting"}
+REQUIRED_METHOD_NAMES = CORE_REQUIRED_METHOD_NAMES | OPTIONAL_METHOD_NAMES
 REQUIRED_METHOD_METRIC_KEYS = {
     "precision", "recall", "f1", "f2", "pr_auc", "roc_auc",
     "false_positive_rate", "false_negative_rate", "confusion_matrix",
@@ -114,6 +138,11 @@ def build_report(evaluate_result: dict, dataset_metadata: dict, model_metadata: 
         for name, metrics in evaluate_result["test_results"].items()
     }
 
+    scenario_difficulty_section = [
+        {**entry, "state": SCENARIO_LABEL_MAP.get(entry["state"], entry["state"])}
+        for entry in evaluate_result.get("scenario_difficulty", [])
+    ]
+
     if evaluate_result["investigation_triggered"]:
         triggered_methods = [name for name, outcome in evaluate_result["gate_outcomes"].items() if outcome["under_investigation"]]
         investigation_section = {
@@ -144,6 +173,7 @@ def build_report(evaluate_result: dict, dataset_metadata: dict, model_metadata: 
             },
         },
         "split": split_section,
+        "scenario_difficulty": scenario_difficulty_section,
         "model": {
             "name": "Logistic Regression",
             "version": model_metadata.get("model_version"),
@@ -229,9 +259,13 @@ def validate_report(report: dict) -> list[str]:
         issues.append("limitations must be a non-empty list")
 
     methods = report.get("methods", {})
-    missing_methods = REQUIRED_METHOD_NAMES - set(methods.keys())
+    missing_methods = CORE_REQUIRED_METHOD_NAMES - set(methods.keys())
     if missing_methods:
         issues.append(f"methods is missing required entries: {sorted(missing_methods)}")
+
+    unknown_methods = set(methods.keys()) - REQUIRED_METHOD_NAMES
+    if unknown_methods:
+        issues.append(f"methods contains unrecognized entries, which is rejected as a safety precaution: {sorted(unknown_methods)}")
 
     for method_name in REQUIRED_METHOD_NAMES & set(methods.keys()):
         metrics = methods[method_name]
@@ -261,6 +295,25 @@ def validate_report(report: dict) -> list[str]:
             value = metrics.get(count_field)
             if not isinstance(value, int) or value < 0:
                 issues.append(f"methods.{method_name}.{count_field} must be a non-negative integer, got {value!r}")
+
+    scenario_difficulty = report.get("scenario_difficulty")
+    if not isinstance(scenario_difficulty, list) or not scenario_difficulty:
+        issues.append("scenario_difficulty must be a non-empty list")
+    else:
+        known_labels = set(SCENARIO_LABEL_MAP.values())
+        for entry in scenario_difficulty:
+            if not isinstance(entry, dict) or {"state", "row_count", "positive_rate", "methods"} - set(entry.keys()):
+                issues.append(f"scenario_difficulty entry is missing required keys: {entry!r}")
+                continue
+            if entry["state"] not in known_labels:
+                issues.append(f"scenario_difficulty entry has an unrecognized state label: {entry['state']!r}")
+            if not isinstance(entry["row_count"], int) or entry["row_count"] < 0:
+                issues.append(f"scenario_difficulty.{entry['state']}.row_count must be a non-negative integer")
+            for method_name, breakdown in entry.get("methods", {}).items():
+                for rate_field in ("predicted_positive_rate", "recall_within_state"):
+                    value = breakdown.get(rate_field)
+                    if value is not None and (not isinstance(value, (int, float)) or not (0 <= value <= 1)):
+                        issues.append(f"scenario_difficulty.{entry['state']}.methods.{method_name}.{rate_field} must be a finite number in [0, 1] or null, got {value!r}")
 
     # Check the field-name-documentation-only strings everywhere EXCEPT
     # model.excluded_fields, their one legitimate, required location.

@@ -121,8 +121,8 @@ def retrain_with_feedback(
         baseline_metadata = json.load(f)
     baseline_threshold = baseline_metadata["selected_threshold"]
 
-    before_test_results = evaluate_split(test_df, baseline_pipeline, baseline_threshold)
-    after_test_results = evaluate_split(test_df, pipeline, new_threshold)
+    before_test_results, _ = evaluate_split(test_df, {"ml_only": baseline_pipeline}, baseline_threshold)
+    after_test_results, _ = evaluate_split(test_df, {"ml_only": pipeline}, new_threshold)
 
     report = {
         "report_version": "1.0",

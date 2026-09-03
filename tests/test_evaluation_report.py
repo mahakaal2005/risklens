@@ -60,7 +60,8 @@ def test_report_is_valid_json(tmp_path, report):
 def test_report_contains_all_required_sections(report):
     for key in [
         "report_version", "generated_at", "data_mode", "synthetic_data_notice",
-        "dataset", "split", "model", "methods", "near_perfect_score_investigation", "limitations",
+        "dataset", "split", "model", "methods", "scenario_difficulty",
+        "near_perfect_score_investigation", "limitations",
     ]:
         assert key in report
     for method in ("rules_only", "logistic_regression", "combined_policy"):

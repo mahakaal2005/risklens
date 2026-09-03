@@ -27,7 +27,22 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-GENERATOR_VERSION = "0.1.0"
+GENERATOR_VERSION = "0.2.0"
+
+# v0.2.0: scaled from 220 merchants x 52 weeks to 900 x 104 weeks, and added
+# two disclosed noise injections (missing data, anomaly weeks) -- see
+# _inject_missing_data / _inject_anomaly_weeks below and MODEL_CARD.md.
+MISSING_DATA_RATE = 0.02
+MISSING_DATA_COLUMNS = [
+    "delivery_evidence_coverage",
+    "support_ticket_rate",
+    "average_support_resolution_time_hours",
+    "previous_review_outcome",
+]
+
+ANOMALY_WEEK_RATE = 0.015
+ANOMALY_REFUND_RATE_RANGE = (0.20, 0.45)
+ANOMALY_VOLUME_CHANGE_RANGE = (-0.85, 3.0)
 
 LATENT_STATES = [
     "stable_merchant",
@@ -192,9 +207,9 @@ LABEL_PROBABILITY_FLOOR = 0.005
 LABEL_PROBABILITY_CEILING = 0.95
 
 DEFAULT_SEED = 42
-DEFAULT_N_MERCHANTS = 220
-DEFAULT_N_WEEKS = 52
-DEFAULT_START_DATE = dt.date(2025, 1, 6)  # a Monday
+DEFAULT_N_MERCHANTS = 900
+DEFAULT_N_WEEKS = 104
+DEFAULT_START_DATE = dt.date(2023, 1, 2)  # a Monday
 
 
 def _sample_bounded(rng: np.random.Generator, mean: float, low: float, high: float, concentration: float = 25.0) -> float:
@@ -312,12 +327,63 @@ def _generate_merchant(rng: np.random.Generator, merchant_index: int, n_weeks: i
     return rows
 
 
+def _inject_missing_data(df: pd.DataFrame, rng: np.random.Generator, rate: float = MISSING_DATA_RATE) -> pd.DataFrame:
+    """Randomly nulls out a small fraction of values in fields that already
+    have documented missing-value behavior in ml/features.py -- so that
+    behavior is actually exercised at dataset scale instead of only in
+    hand-written unit tests. Independent per column; does not touch
+    label_high_loss_next_30d or latent_state_for_demo_only."""
+    df = df.copy()
+    for column in MISSING_DATA_COLUMNS:
+        mask = rng.random(len(df)) < rate
+        df.loc[mask, column] = np.nan
+    return df
+
+
+def _inject_anomaly_weeks(df: pd.DataFrame, rng: np.random.Generator, rate: float = ANOMALY_WEEK_RATE) -> pd.DataFrame:
+    """Overwrites a small fraction of rows' refund rate or transaction volume
+    with an extreme one-off value drawn independently of the row's latent
+    state -- a noisy week that doesn't correspond to any real state change.
+    Prevents the observed features from being trivially linearly separable
+    and tests whether rules/models are robust to noise, not just to the
+    state signal they were designed around. Does not touch the label -- an
+    anomalous week is not itself evidence of elevated loss risk.
+
+    Every dependent raw column (counts, the *_change_30d columns) is
+    recomputed after the anomalous value is set, so the row stays
+    internally consistent rather than encoding a rate that disagrees with
+    its own count/previous-value columns.
+    """
+    df = df.copy()
+    n = len(df)
+
+    refund_mask = rng.random(n) < (rate / 2)
+    refund_idx = df.index[refund_mask]
+    df.loc[refund_idx, "refund_rate_30d"] = rng.uniform(*ANOMALY_REFUND_RATE_RANGE, size=len(refund_idx))
+    df.loc[refund_idx, "refund_count_30d"] = (df.loc[refund_idx, "transaction_count_30d"] * df.loc[refund_idx, "refund_rate_30d"]).round().astype(int)
+    df.loc[refund_idx, "refund_rate_change_30d"] = (df.loc[refund_idx, "refund_rate_30d"] - df.loc[refund_idx, "refund_rate_previous_30d"]).round(4)
+
+    volume_mask = rng.random(n) < (rate / 2)
+    volume_idx = df.index[volume_mask]
+    volume_change = rng.uniform(*ANOMALY_VOLUME_CHANGE_RANGE, size=len(volume_idx))
+    df.loc[volume_idx, "transaction_volume_30d"] = (df.loc[volume_idx, "transaction_volume_previous_30d"] * (1 + volume_change)).clip(lower=0.0).round(2)
+    df.loc[volume_idx, "transaction_volume_change_30d"] = (
+        (df.loc[volume_idx, "transaction_volume_30d"] - df.loc[volume_idx, "transaction_volume_previous_30d"])
+        / df.loc[volume_idx, "transaction_volume_previous_30d"].replace(0, pd.NA)
+    ).fillna(0.0).round(4)
+
+    return df
+
+
 def generate_dataset(seed: int = DEFAULT_SEED, n_merchants: int = DEFAULT_N_MERCHANTS, n_weeks: int = DEFAULT_N_WEEKS, start_date: dt.date = DEFAULT_START_DATE) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     all_rows = []
     for merchant_index in range(1, n_merchants + 1):
         all_rows.extend(_generate_merchant(rng, merchant_index, n_weeks, start_date))
-    return pd.DataFrame(all_rows)
+    df = pd.DataFrame(all_rows)
+    df = _inject_missing_data(df, rng)
+    df = _inject_anomaly_weeks(df, rng)
+    return df
 
 
 def build_metadata(df: pd.DataFrame, seed: int, n_merchants: int, n_weeks: int) -> dict:
@@ -342,6 +408,11 @@ def build_metadata(df: pd.DataFrame, seed: int, n_merchants: int, n_weeks: int) 
             "positive_rate": round(positive / total, 4) if total else None,
         },
         "generator_version": GENERATOR_VERSION,
+        "noise_injection": {
+            "missing_data_rate": MISSING_DATA_RATE,
+            "missing_data_columns": MISSING_DATA_COLUMNS,
+            "anomaly_week_rate": ANOMALY_WEEK_RATE,
+        },
         "statement": (
             "This dataset is synthetic and demonstration-only. It does not represent "
             "real merchants, real transactions, or real payment-risk outcomes."

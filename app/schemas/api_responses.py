@@ -239,7 +239,10 @@ class MetricsResponse(BaseModel):
     selected_threshold: float | None = None
     rules_only_metrics: dict | None = None
     logistic_regression_metrics: dict | None = None
+    random_forest_metrics: dict | None = None
+    gradient_boosting_metrics: dict | None = None
     combined_policy_metrics: dict | None = None
+    scenario_difficulty: list | None = None
     near_perfect_investigation_status: str | None = None
     limitation: str = (
         "Synthetic-data metrics demonstrate prototype workflow only and do not prove "

@@ -74,7 +74,44 @@ def test_no_prohibited_sensitive_fields():
 def test_rate_fields_are_valid_ranges():
     df = generate_dataset(seed=42, n_merchants=220, n_weeks=52)
     for col in ["refund_rate_30d", "refund_rate_previous_30d", "chargeback_rate_30d", "chargeback_rate_previous_30d", "delivery_evidence_coverage"]:
-        assert df[col].between(0, 1).all(), f"{col} out of [0,1] range"
+        # dropna(): delivery_evidence_coverage is one of the columns with
+        # injected missing data (see _inject_missing_data) -- a null value
+        # there is expected, not an out-of-range value.
+        assert df[col].dropna().between(0, 1).all(), f"{col} out of [0,1] range"
+
+
+def test_missing_data_injection_produces_nulls_in_expected_columns():
+    from ml.generate_synthetic_data import MISSING_DATA_COLUMNS
+
+    df = _small_dataset()
+    for col in MISSING_DATA_COLUMNS:
+        null_rate = df[col].isna().mean()
+        assert 0 < null_rate < 0.10, f"{col} null rate {null_rate} outside expected small-but-nonzero range"
+
+    other_columns = ["merchant_id", "week_start", "label_high_loss_next_30d", "latent_state_for_demo_only"]
+    for col in other_columns:
+        assert df[col].isna().sum() == 0, f"{col} should never have injected missing values"
+
+
+def test_anomaly_injection_keeps_derived_columns_internally_consistent():
+    df = _small_dataset()
+
+    recomputed_refund_change = (df["refund_rate_30d"] - df["refund_rate_previous_30d"]).round(4)
+    pd.testing.assert_series_equal(df["refund_rate_change_30d"], recomputed_refund_change, check_names=False, atol=1e-3, rtol=0)
+
+    recomputed_refund_count = (df["transaction_count_30d"] * df["refund_rate_30d"]).round().astype(int)
+    assert (df["refund_count_30d"] - recomputed_refund_count).abs().le(1).all()
+
+    safe_prev_volume = df["transaction_volume_previous_30d"].replace(0, pd.NA)
+    recomputed_volume_change = ((df["transaction_volume_30d"] - df["transaction_volume_previous_30d"]) / safe_prev_volume).fillna(0.0).round(4)
+    pd.testing.assert_series_equal(df["transaction_volume_change_30d"], recomputed_volume_change, check_names=False, atol=1e-3, rtol=0)
+
+
+def test_anomaly_injection_actually_produces_extreme_values():
+    from ml.generate_synthetic_data import ANOMALY_REFUND_RATE_RANGE
+
+    df = _small_dataset()
+    assert (df["refund_rate_30d"] >= ANOMALY_REFUND_RATE_RANGE[0]).any(), "expected at least one anomalous high-refund week"
 
 
 def test_full_dataset_passes_validation():
