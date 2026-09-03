@@ -28,8 +28,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 from ml.evaluate_model import evaluate_split
-from ml.features import LABEL_COLUMN, compute_feature_frame
-from ml.model_utils import ML_FEATURE_COLUMNS, build_preprocessing_pipeline
+from ml.features import LABEL_COLUMN
+from ml.model_utils import build_preprocessing_pipeline
+from ml.model_utils import design_matrix as _design_matrix
 from ml.split_data import DEFAULT_CSV_PATH, load_and_split
 from ml.train_baseline_model import DEFAULT_SEED, select_threshold
 
@@ -37,10 +38,6 @@ DEFAULT_FEEDBACK_PATH = Path("ml/artifacts/feedback_label_overrides.json")
 DEFAULT_ARTIFACT_DIR = Path("ml/artifacts")
 BASELINE_MODEL_VERSION = "0.1.0"
 FEEDBACK_MODEL_VERSION = "0.1.0-feedback1"
-
-
-def _design_matrix(df: pd.DataFrame) -> pd.DataFrame:
-    return compute_feature_frame(df)[ML_FEATURE_COLUMNS]
 
 
 def load_feedback_overrides(path: Path = DEFAULT_FEEDBACK_PATH) -> list[dict]:

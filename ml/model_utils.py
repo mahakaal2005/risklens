@@ -27,7 +27,7 @@ from sklearn.metrics import (
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from ml.features import FEATURE_CATALOGUE
+from ml.features import FEATURE_CATALOGUE, compute_feature_frame
 
 NUMERIC_ML_FEATURES = [f["name"] for f in FEATURE_CATALOGUE if f["used_by"] in ("ml", "both") and f["name"] not in ("merchant_category", "previous_review_outcome")]
 CATEGORICAL_ML_FEATURES = ["merchant_category", "previous_review_outcome"]
@@ -55,6 +55,13 @@ THRESHOLD_GRID = np.round(np.arange(0.05, 0.951, 0.05), 2)
 FBETA_BETA = 2.0
 MIN_PRECISION = 0.30
 MAX_FALSE_POSITIVE_RATE = 0.20
+
+
+def design_matrix(df: pd.DataFrame) -> pd.DataFrame:
+    """Shared by every training/evaluation script -- was copy-pasted
+    identically in ml/train_baseline_model.py, ml/train_tree_models.py,
+    ml/evaluate_model.py, and ml/retrain_with_feedback.py."""
+    return compute_feature_frame(df)[ML_FEATURE_COLUMNS]
 
 
 def build_preprocessing_pipeline() -> ColumnTransformer:

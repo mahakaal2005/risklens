@@ -19,18 +19,14 @@ import joblib
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
-from ml.features import LABEL_COLUMN, compute_feature_frame
+from ml.features import LABEL_COLUMN
 from ml.model_utils import MAX_FALSE_POSITIVE_RATE, MIN_PRECISION, ML_FEATURE_COLUMNS, build_preprocessing_pipeline, select_threshold
+from ml.model_utils import design_matrix as _design_matrix
 from ml.split_data import DEFAULT_CSV_PATH, load_and_split
 
 DEFAULT_SEED = 42
 DEFAULT_ARTIFACT_DIR = Path("ml/artifacts")
 MODEL_VERSION = "0.1.0"
-
-
-def _design_matrix(df):
-    features = compute_feature_frame(df)
-    return features[ML_FEATURE_COLUMNS]
 
 
 def train(csv_path: Path = DEFAULT_CSV_PATH, seed: int = DEFAULT_SEED, artifact_dir: Path = DEFAULT_ARTIFACT_DIR) -> dict:

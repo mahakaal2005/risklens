@@ -18,16 +18,16 @@ import numpy as np
 import pandas as pd
 
 from ml.evaluation_report import build_report, save_report
-from ml.features import LABEL_COLUMN, LATENT_STATE_COLUMN, compute_feature_frame
+from ml.features import LABEL_COLUMN, LATENT_STATE_COLUMN
 from ml.inspect_synthetic_data import scan_leakage_column_names
 from ml.model_utils import (
-    ML_FEATURE_COLUMNS,
     check_near_perfect,
     combined_policy,
     compute_metrics,
     compute_scenario_difficulty,
     rules_only_positive_prediction,
 )
+from ml.model_utils import design_matrix as _design_matrix
 from ml.rules_engine import score_merchant_week
 from ml.split_data import DEFAULT_CSV_PATH, load_and_split
 from ml.train_tree_models import TREE_MODELS
@@ -38,10 +38,6 @@ MODEL_VERSION = "0.1.0"
 
 SEASONAL_STATE = "seasonal_sale_legitimate_returns"
 EARLY_HIDDEN_STATE = "early_hidden_risk"
-
-
-def _design_matrix(df: pd.DataFrame) -> pd.DataFrame:
-    return compute_feature_frame(df)[ML_FEATURE_COLUMNS]
 
 
 def _score_rules_for_split(df: pd.DataFrame) -> list[dict]:
