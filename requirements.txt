@@ -6,6 +6,9 @@
  pandas>=2.0,<3.0
  numpy>=1.24,<3.0
  scikit-learn>=1.3,<2.0
+ # Used only by the comparison-only trajectory Transformer baseline
+ # (ml/trajectory_transformer.py). Every live-scoring path is scikit-learn.
+ torch>=2.0,<3.0
  pyyaml>=6.0,<7.0
  joblib>=1.3,<2.0
  pytest>=8.0,<9.0

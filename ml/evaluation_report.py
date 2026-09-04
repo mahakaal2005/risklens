@@ -59,6 +59,7 @@ _METHOD_KEY_RENAME = {
     "ml_only": "logistic_regression",
     "random_forest": "random_forest",
     "gradient_boosting": "gradient_boosting",
+    "trajectory_transformer": "trajectory_transformer",
     "combined": "combined_policy",
 }
 
@@ -67,21 +68,31 @@ REQUIRED_TOP_LEVEL_KEYS = {
     "dataset", "split", "model", "methods", "scenario_difficulty",
     "near_perfect_score_investigation", "limitations",
 }
+
+# Analyses added after the report format was first fixed. Permitted and
+# strictly validated when present, but a report generated before they existed
+# must still validate -- otherwise GET /metrics would reject the whole report
+# rather than serving null for the missing section, which is the contract the
+# dashboard's placeholder rendering depends on.
+OPTIONAL_TOP_LEVEL_KEYS = {"cost_analysis", "calibration"}
 # random_forest / gradient_boosting are comparison-only baselines (see
 # ml/train_tree_models.py) -- required whenever present in the evaluate()
 # result, but evaluate() degrades gracefully if their artifacts are
 # missing, so they are validated here only when the report actually
 # contains them (see the methods-required check below).
 CORE_REQUIRED_METHOD_NAMES = {"rules_only", "logistic_regression", "combined_policy"}
-OPTIONAL_METHOD_NAMES = {"random_forest", "gradient_boosting"}
+OPTIONAL_METHOD_NAMES = {"random_forest", "gradient_boosting", "trajectory_transformer"}
 REQUIRED_METHOD_NAMES = CORE_REQUIRED_METHOD_NAMES | OPTIONAL_METHOD_NAMES
 REQUIRED_METHOD_METRIC_KEYS = {
     "precision", "recall", "f1", "f2", "pr_auc", "roc_auc",
     "false_positive_rate", "false_negative_rate", "confusion_matrix",
     "predicted_review_case_count", "seasonal_sale_false_positive_count",
-    "early_hidden_risk_false_negative_count",
+    "early_hidden_risk_false_negative_count", "threshold_used",
 }
-RATE_FIELDS = {"precision", "recall", "f1", "f2", "pr_auc", "roc_auc", "false_positive_rate", "false_negative_rate"}
+# threshold_used is included so the comparison table can show that each model
+# was evaluated at the operating point IT selected on validation data, rather
+# than at another model's operating point.
+RATE_FIELDS = {"precision", "recall", "f1", "f2", "pr_auc", "roc_auc", "false_positive_rate", "false_negative_rate", "threshold_used"}
 
 # Prohibited anywhere in the serialized report EXCEPT inside
 # model.excluded_fields, which is required by the report schema to
@@ -112,6 +123,127 @@ def _method_metrics(raw: dict) -> dict:
         "predicted_review_case_count": raw.get("n_predicted_positive", raw.get("predicted_review_case_count")),
         "seasonal_sale_false_positive_count": raw.get("seasonal_false_positives", raw.get("seasonal_sale_false_positive_count")),
         "early_hidden_risk_false_negative_count": raw.get("early_hidden_false_negatives", raw.get("early_hidden_risk_false_negative_count")),
+        "threshold_used": raw.get("threshold_used"),
+    }
+
+
+COST_ANALYSIS_KEYS = {
+    "cost_assumptions_inr", "recovery_rate", "assumption_notice", "headline_comparison",
+    "methods", "threshold_sensitivity_logistic_regression",
+}
+COST_METHOD_KEYS = {"f2_threshold", "cost_optimal_threshold", "at_f2_threshold", "at_cost_optimal_threshold"}
+
+
+def _validate_cost_analysis(cost_analysis) -> list[str]:
+    """The cost section is optional (an older report predates it), but when
+    present it must have the exact expected shape and must carry its
+    assumption notice -- a rupee figure served without the "this is a guess"
+    disclaimer is the single most misreadable thing this report can emit."""
+    if not cost_analysis:
+        return []
+
+    issues: list[str] = []
+    if not isinstance(cost_analysis, dict):
+        return ["cost_analysis must be an object"]
+
+    unexpected = set(cost_analysis.keys()) - COST_ANALYSIS_KEYS
+    if unexpected:
+        issues.append(f"cost_analysis contains unexpected field(s): {sorted(unexpected)}")
+
+    if not cost_analysis.get("assumption_notice"):
+        issues.append("cost_analysis.assumption_notice must be a non-empty string")
+
+    for method_name, entry in (cost_analysis.get("methods") or {}).items():
+        if not isinstance(entry, dict) or COST_METHOD_KEYS - set(entry.keys()):
+            issues.append(f"cost_analysis.methods.{method_name} is missing required keys")
+            continue
+        for point in ("at_f2_threshold", "at_cost_optimal_threshold"):
+            savings = entry[point].get("savings_per_1000_reviews_inr")
+            if savings is not None and not isinstance(savings, (int, float)):
+                issues.append(f"cost_analysis.methods.{method_name}.{point}.savings_per_1000_reviews_inr must be a number or null")
+
+    return issues
+
+
+def _cost_analysis_section(cost_analysis: dict | None) -> dict:
+    """Rupee cost summary, with method keys renamed to the report's public
+    names so the cost section and the metrics section agree.
+
+    The per-threshold `candidates` grids from select_cost_optimal_threshold()
+    are deliberately NOT carried into the report: they are working data, and
+    the report is served over an API where a smaller, fixed-shape payload is
+    the safer default.
+    """
+    if not cost_analysis:
+        return {}
+
+    methods = {
+        _METHOD_KEY_RENAME.get(name, name): entry
+        for name, entry in cost_analysis.get("methods", {}).items()
+    }
+    return {
+        "cost_assumptions_inr": cost_analysis["cost_assumptions_inr"],
+        "recovery_rate": cost_analysis["recovery_rate"],
+        "assumption_notice": cost_analysis["assumption_notice"],
+        "headline_comparison": cost_analysis.get("headline_comparison"),
+        "methods": methods,
+        "threshold_sensitivity_logistic_regression": cost_analysis["threshold_sensitivity_logistic_regression"],
+    }
+
+
+CALIBRATION_KEYS = {"fit_on", "scored_on", "methodology_note", "interpretation_note", "methods"}
+CALIBRATION_VARIANTS = {"raw", "platt", "isotonic"}
+CALIBRATION_METRIC_KEYS = {
+    "brier_score", "expected_calibration_error", "maximum_calibration_error",
+    "mean_predicted_probability", "observed_positive_rate", "reliability_curve",
+}
+
+
+def _validate_calibration(calibration) -> list[str]:
+    """Optional section (older reports predate it), but strictly shaped when
+    present. The methodology note is required for the same reason the cost
+    section's assumption notice is: a calibration number served without the
+    "validation does double duty" caveat overstates how clean the measurement is.
+    """
+    if not calibration:
+        return []
+    if not isinstance(calibration, dict):
+        return ["calibration must be an object"]
+
+    issues: list[str] = []
+    unexpected = set(calibration.keys()) - CALIBRATION_KEYS
+    if unexpected:
+        issues.append(f"calibration contains unexpected field(s): {sorted(unexpected)}")
+    if not calibration.get("methodology_note"):
+        issues.append("calibration.methodology_note must be a non-empty string")
+
+    for method_name, entry in (calibration.get("methods") or {}).items():
+        metrics = (entry or {}).get("metrics") or {}
+        missing_variants = CALIBRATION_VARIANTS - set(metrics.keys())
+        if missing_variants:
+            issues.append(f"calibration.methods.{method_name} is missing variants: {sorted(missing_variants)}")
+            continue
+        for variant, values in metrics.items():
+            if CALIBRATION_METRIC_KEYS - set(values.keys()):
+                issues.append(f"calibration.methods.{method_name}.{variant} is missing required metric keys")
+                continue
+            for field in ("brier_score", "expected_calibration_error", "maximum_calibration_error"):
+                value = values[field]
+                if not isinstance(value, (int, float)) or not 0.0 <= value <= 1.0:
+                    issues.append(f"calibration.methods.{method_name}.{variant}.{field} must be a number in [0, 1], got {value!r}")
+
+    return issues
+
+
+def _calibration_section(calibration: dict | None) -> dict:
+    if not calibration:
+        return {}
+    return {
+        **{k: v for k, v in calibration.items() if k != "methods"},
+        "methods": {
+            _METHOD_KEY_RENAME.get(name, name): entry
+            for name, entry in calibration.get("methods", {}).items()
+        },
     }
 
 
@@ -174,6 +306,8 @@ def build_report(evaluate_result: dict, dataset_metadata: dict, model_metadata: 
         },
         "split": split_section,
         "scenario_difficulty": scenario_difficulty_section,
+        "cost_analysis": _cost_analysis_section(evaluate_result.get("cost_analysis")),
+        "calibration": _calibration_section(evaluate_result.get("calibration")),
         "model": {
             "name": "Logistic Regression",
             "version": model_metadata.get("model_version"),
@@ -245,7 +379,7 @@ def validate_report(report: dict) -> list[str]:
         issues.append(f"Missing required top-level fields: {sorted(missing_top_level)}")
         return issues  # cannot safely check further without these
 
-    unexpected_top_level = set(report.keys()) - REQUIRED_TOP_LEVEL_KEYS
+    unexpected_top_level = set(report.keys()) - REQUIRED_TOP_LEVEL_KEYS - OPTIONAL_TOP_LEVEL_KEYS
     if unexpected_top_level:
         issues.append(f"Report contains unexpected top-level field(s), which is rejected as a safety precaution: {sorted(unexpected_top_level)}")
 
@@ -257,6 +391,9 @@ def validate_report(report: dict) -> list[str]:
 
     if not report.get("limitations"):
         issues.append("limitations must be a non-empty list")
+
+    issues.extend(_validate_cost_analysis(report.get("cost_analysis")))
+    issues.extend(_validate_calibration(report.get("calibration")))
 
     methods = report.get("methods", {})
     missing_methods = CORE_REQUIRED_METHOD_NAMES - set(methods.keys())

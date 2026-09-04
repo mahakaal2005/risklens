@@ -28,15 +28,18 @@ legal/compliance decisions. Not production-ready or compliance-certified.
 
 - **"Honest metrics including false-positive cost."** Real numbers from the current held-out test split (900 synthetic merchants, 93,600 merchant-weeks, threshold selected on validation data only — never the test set):
 
-  | Method | Precision | Recall | PR-AUC | False-positive rate |
-  |---|---|---|---|---|
-  | Rules-only | 0.310 | 0.454 | 0.288 | 0.172 |
-  | Logistic Regression (live-scoring model) | 0.561 | 0.828 | 0.664 | 0.110 |
-  | Random Forest (comparison only) | 0.323 | 0.944 | 0.689 | 0.335 |
-  | Gradient Boosting (comparison only) | 0.470 | 0.925 | 0.693 | 0.177 |
-  | Combined policy | 0.403 | 0.870 | 0.664 | 0.219 |
+  | Method | Threshold | Precision | Recall | PR-AUC | False-positive rate |
+  |---|---|---|---|---|---|
+  | Rules-only | — | 0.310 | 0.454 | 0.288 | 0.172 |
+  | Logistic Regression (live-scoring model) | 0.10 | 0.561 | 0.828 | 0.664 | 0.110 |
+  | Random Forest (comparison only) | 0.55 | 0.572 | 0.881 | 0.689 | 0.112 |
+  | Gradient Boosting (comparison only) | 0.15 | 0.568 | 0.884 | 0.693 | 0.114 |
+  | Trajectory Transformer (comparison only) | 0.15 | 0.569 | 0.883 | 0.688 | 0.113 |
+  | Combined policy | 0.10 | 0.403 | 0.870 | 0.664 | 0.219 |
 
-  Logistic Regression is the model actually used for live case scoring — Random Forest and Gradient Boosting are evaluated purely as comparison baselines (never used to create a case), so the complexity-vs-accuracy tradeoff is shown honestly: Gradient Boosting edges out Logistic Regression on recall/PR-AUC at a higher false-positive cost; Random Forest over-flags substantially. None of the five methods is a near-perfect score — this project treats that as a bug signal to investigate, not a headline number (see `MODEL_CARD.md`'s near-perfect-score gate).
+  Every method is scored at its **own** validation-selected threshold. Logistic Regression is the model actually used for live case scoring — Random Forest, Gradient Boosting, and the Trajectory Transformer are evaluated purely as comparison baselines (never used to create a case), so the complexity-vs-accuracy tradeoff is shown honestly: all three non-linear models cluster within 0.005 PR-AUC of each other and buy ~5 points of recall over Logistic Regression for ~0.3 points of extra false-positive rate. None of the six methods is a near-perfect score — this project treats that as a bug signal to investigate, not a headline number (see `MODEL_CARD.md`'s near-perfect-score gate, and its "Corrected measurement errors" section for two measurement bugs found and fixed in this evaluation).
+- **"Is the probability honest, not just well-ranked?"** Every model is calibration-tested (`ml/calibration.py`): Brier score, expected and maximum calibration error, and a reliability curve, with Platt and isotonic calibrators fit on validation and scored on held-out test. This caught that **Random Forest states roughly double the true risk** (mean predicted 0.288 vs. a 0.145 base rate) — which retroactively explains why its selected threshold was 0.55 when every other model chose 0.10–0.15. It also found that post-hoc calibration *worsens* the Trajectory Transformer's worst-bin error, so "just apply isotonic" is reported as the wrong answer where it is. See `MODEL_CARD.md`.
+- **"Show the cost, not just the score."** Every method is also costed in rupees (`rules/cost_model.yaml`, `ml/cost_model.py`), against two baselines: reviewing nobody and reviewing everybody. Two findings the accuracy table hides — the **rules-only baseline does not beat reviewing everybody** (₹29.3M vs ₹22.4M, it adds negative value against that baseline), and the best model beats review-everything by only **~12%**, because the assumed 72:1 miss-to-review cost ratio makes over-flagging nearly free. **Every rupee figure is a labelled assumption, not a measured cost**, so a sensitivity table reports how the recommended threshold moves across cost ratios from 10:1 to 500:1 — letting a reader locate their own ratio instead of inheriting ours. See `MODEL_CARD.md`.
 - **The label is not circular.** `label_high_loss_next_30d` is generated from a 5-state hidden latent-merchant simulation (Stable, Seasonal/legitimate high-return, Operational fulfilment failure, High-risk, Early hidden-risk), not as a threshold function of the same fields the rules engine checks.
 - **"Strictly defense-only: anything offense-capable is disqualified."** The policy engine can only ever return a recommendation (`APPROVE`, `ALLOW_WITH_MONITORING`, `REQUEST_EVIDENCE`, `MANUAL_REVIEW_REQUIRED`, `ESCALATE_TO_COMPLIANCE`) — never an automated freeze, hold, ban, termination, or payment rejection. Every high-impact action requires a human reviewer.
 - **Fair to the merchant, not just accurate.** The flagged merchant sees a safe, plain-language explanation with concrete before/after trend values, an evidence checklist, and a genuine appeal path — not just a score.

@@ -159,6 +159,43 @@ def test_validate_report_rejects_leaked_latent_state_name(report):
     assert any("stable_merchant" in issue for issue in issues)
 
 
+def test_optional_comparison_methods_are_registered_consistently():
+    """Random Forest, Gradient Boosting and the Trajectory Transformer are all
+    comparison-only baselines whose artifacts may legitimately be absent. Each
+    must be registered in BOTH the rename map and the optional set -- a method
+    in the rename map but not the optional set would make a missing artifact a
+    hard validation failure."""
+    from ml.evaluation_report import OPTIONAL_METHOD_NAMES, _METHOD_KEY_RENAME
+
+    for method_name in ("random_forest", "gradient_boosting", "trajectory_transformer"):
+        assert method_name in _METHOD_KEY_RENAME
+        assert _METHOD_KEY_RENAME[method_name] in OPTIONAL_METHOD_NAMES
+
+
+def test_report_includes_trajectory_transformer_when_the_artifact_is_present(report, evaluate_result):
+    if "trajectory_transformer" not in evaluate_result["test_results"]:
+        pytest.skip("Trajectory Transformer artifact not trained in this environment")
+
+    metrics = report["methods"]["trajectory_transformer"]
+    assert metrics["precision"] == evaluate_result["test_results"]["trajectory_transformer"]["precision"]
+    assert metrics["recall"] == evaluate_result["test_results"]["trajectory_transformer"]["recall"]
+    # Every method must record the threshold it was actually scored at, so a
+    # reader can never mistake one model's operating point for another's.
+    assert metrics["threshold_used"] == evaluate_result["test_results"]["trajectory_transformer"]["threshold_used"]
+
+
+def test_report_validates_without_any_optional_comparison_method(report):
+    """A report built where only the required methods ran must still validate --
+    the comparison models are optional by design."""
+    from ml.evaluation_report import OPTIONAL_METHOD_NAMES
+
+    trimmed = json.loads(json.dumps(report))
+    for optional_name in OPTIONAL_METHOD_NAMES:
+        trimmed["methods"].pop(optional_name, None)
+
+    validate_report(trimmed)  # must not raise
+
+
 def test_load_report_raises_not_found_for_missing_file(tmp_path):
     with pytest.raises(ReportNotFoundError):
         load_report(tmp_path / "does_not_exist.json")

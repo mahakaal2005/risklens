@@ -241,6 +241,13 @@ class MetricsResponse(BaseModel):
     logistic_regression_metrics: dict | None = None
     random_forest_metrics: dict | None = None
     gradient_boosting_metrics: dict | None = None
+    trajectory_transformer_metrics: dict | None = None
+    # Rupee cost analysis and probability calibration. Both follow the same
+    # null-when-absent contract as the optional comparison-model metrics above:
+    # a report generated before these sections existed serves null, and the
+    # dashboard renders a placeholder rather than erroring.
+    cost_analysis: dict | None = None
+    calibration: dict | None = None
     combined_policy_metrics: dict | None = None
     scenario_difficulty: list | None = None
     near_perfect_investigation_status: str | None = None

@@ -10,6 +10,12 @@ from ml.model_utils import (
 )
 from ml.rules_engine import score_merchant_week
 
+# Same small-scale fixture sizing as tests/test_trajectory_transformer.py --
+# large enough for a real chronological split, small enough that a test can
+# run the full evaluate() pipeline without the 93,600-row production CSV.
+SMALL_N_MERCHANTS = 40
+SMALL_N_WEEKS = 20
+
 BASE_ROW = dict(
     merchant_id="merchant_demo_0001", week_start="2025-06-02", merchant_category="apparel",
     merchant_age_days=400, transaction_count_30d=500, transaction_volume_30d=500000.0,
@@ -80,6 +86,114 @@ def test_combined_policy_output_is_always_an_allowed_recommendation(ml_probabili
     assert decision.recommendation in ALLOWED_RECOMMENDATIONS
     assert decision.risk_signal_intensity in {"Low", "Medium", "High"}
     assert decision.policy_explanation
+
+
+class _ConstantPipeline:
+    """Minimal stand-in for a fitted sklearn pipeline, so the precomputed_probs
+    fallback can be tested without training a real model."""
+
+    def __init__(self, probability: float):
+        self.probability = probability
+
+    def predict_proba(self, X):
+        column = np.full(len(X), self.probability)
+        return np.column_stack([1.0 - column, column])
+
+
+@pytest.fixture(scope="module")
+def evaluation_frame():
+    from ml.generate_synthetic_data import generate_dataset
+
+    return generate_dataset(seed=42, n_merchants=SMALL_N_MERCHANTS, n_weeks=SMALL_N_WEEKS)
+
+
+def test_evaluate_split_uses_precomputed_probs_instead_of_a_pipeline(evaluation_frame):
+    """A method supplied via precomputed_probs is scored from those
+    probabilities, not from any pipeline -- this is the path the Trajectory
+    Transformer uses, since it scores whole merchant sequences and cannot
+    expose .predict_proba(X) on a design matrix."""
+    from ml.evaluate_model import evaluate_split
+
+    # Everything above the threshold: the method must flag every row.
+    probabilities = np.full(len(evaluation_frame), 0.99)
+
+    results, _ = evaluate_split(
+        evaluation_frame,
+        {"ml_only": _ConstantPipeline(0.01)},
+        threshold=0.5,
+        precomputed_probs={"trajectory_transformer": probabilities},
+    )
+
+    assert "trajectory_transformer" in results
+    assert results["trajectory_transformer"]["n_predicted_positive"] == len(evaluation_frame)
+    # The sklearn-backed method is unaffected and still uses its own pipeline.
+    assert results["ml_only"]["n_predicted_positive"] == 0
+
+
+def test_evaluate_split_falls_back_to_the_sklearn_path_without_precomputed_probs(evaluation_frame):
+    from ml.evaluate_model import evaluate_split
+
+    results, _ = evaluate_split(evaluation_frame, {"ml_only": _ConstantPipeline(0.99)}, threshold=0.5)
+
+    assert "trajectory_transformer" not in results
+    assert results["ml_only"]["n_predicted_positive"] == len(evaluation_frame)
+
+
+def test_evaluate_split_scores_each_method_at_its_own_threshold(evaluation_frame):
+    """Regression test for the threshold-scoring bug: applying one model's
+    operating point to another model's probabilities is not a like-for-like
+    comparison. 0.6 must clear its own 0.5 threshold while failing the shared
+    0.9 fallback."""
+    from ml.evaluate_model import evaluate_split
+
+    results, _ = evaluate_split(
+        evaluation_frame,
+        {"ml_only": _ConstantPipeline(0.95), "random_forest": _ConstantPipeline(0.6)},
+        threshold=0.9,
+        thresholds_by_method={"ml_only": 0.9, "random_forest": 0.5},
+    )
+
+    assert results["random_forest"]["threshold_used"] == 0.5
+    assert results["random_forest"]["n_predicted_positive"] == len(evaluation_frame)
+    assert results["ml_only"]["threshold_used"] == 0.9
+    # Rules fire on their own conditions, not a probability cut point.
+    assert results["rules_only"]["threshold_used"] is None
+
+
+def test_evaluate_omits_trajectory_transformer_when_the_artifact_is_absent(tmp_path, capsys):
+    """A missing comparison-model artifact must degrade to a clear message and
+    a report without that method -- never an exception. Same graceful-skip
+    contract the tree models already have.
+
+    Runs the real evaluate() end-to-end (rules scoring, sklearn scoring,
+    combined policy, scenario difficulty, near-perfect gate -- nothing stubbed)
+    but over the small fixture dataset, since this asserts a control-flow
+    branch rather than any metric value. On the full 93,600-row CSV this single
+    test costs minutes.
+    """
+    import shutil
+    from pathlib import Path
+
+    from ml.evaluate_model import DEFAULT_ARTIFACT_DIR, evaluate
+    from ml.generate_synthetic_data import generate_dataset
+
+    csv_path = tmp_path / "small_dataset.csv"
+    generate_dataset(seed=42, n_merchants=SMALL_N_MERCHANTS, n_weeks=SMALL_N_WEEKS).to_csv(csv_path, index=False)
+
+    # Copy only the artifacts the required path needs, deliberately omitting
+    # every optional comparison model.
+    artifact_dir = tmp_path / "artifacts"
+    artifact_dir.mkdir()
+    for name in ("logistic_regression_v0.1.0.joblib", "logistic_regression_v0.1.0_metadata.json"):
+        shutil.copy(Path(DEFAULT_ARTIFACT_DIR) / name, artifact_dir / name)
+
+    result = evaluate(csv_path=csv_path, artifact_dir=artifact_dir)
+
+    assert "trajectory_transformer" not in result["test_results"]
+    assert "trajectory_transformer" not in result["validation_results"]
+    assert "ml_only" in result["test_results"]  # the required path still ran
+    assert result["test_results"]["ml_only"]["confusion_matrix"]  # scored real rows, not a stub
+    assert "Trajectory Transformer artifact not found" in capsys.readouterr().out
 
 
 def test_near_perfect_gate_flags_zero_false_positives():

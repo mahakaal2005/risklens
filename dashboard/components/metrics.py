@@ -10,6 +10,7 @@ import streamlit as st
 
 from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
 from dashboard.components.common import render_error
+from dashboard.components.economics import render_calibration_panel, render_cost_panel
 
 PRODUCT_EXPLANATION = (
     "ClearRisk Recover identifies synthetic merchant patterns associated with rising "
@@ -31,6 +32,7 @@ METHOD_GUIDANCE = [
     ("Logistic Regression", "Lower false-positive rate, fully interpretable — the model actually used for live case scoring."),
     ("Random Forest", "Comparison baseline only (not used for live scoring) — shown to check whether added complexity earns better held-out performance."),
     ("Gradient Boosting", "Comparison baseline only (not used for live scoring) — same purpose as Random Forest, a different model family."),
+    ("Trajectory Transformer", "Comparison baseline only (not used for live scoring) — reads the merchant's last 8 weeks instead of one week, to test whether the trend itself carries signal."),
     ("Combined policy", "Higher recall — best for a conservative risk-operations queue; the reviewer handles more cases. Built on Logistic Regression, the live-scoring model."),
     ("Rules-only", "Fully transparent fallback, but lower measured performance on synthetic test data."),
 ]
@@ -41,6 +43,7 @@ METHOD_ROWS = [
     ("Logistic Regression", "logistic_regression_metrics"),
     ("Random Forest", "random_forest_metrics"),
     ("Gradient Boosting", "gradient_boosting_metrics"),
+    ("Trajectory Transformer", "trajectory_transformer_metrics"),
     ("Combined policy", "combined_policy_metrics"),
 ]
 
@@ -148,6 +151,9 @@ def render_overview(client: ClearRiskAPIClient) -> None:
                     row[f"{method_name} recall"] = breakdown.get("recall_within_state")
                 scenario_rows.append(row)
             st.dataframe(scenario_rows, width="stretch", hide_index=True)
+
+    render_cost_panel(metrics)
+    render_calibration_panel(metrics)
 
     st.warning(HONEST_LIMITATION, icon="📊")
 

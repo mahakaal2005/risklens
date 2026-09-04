@@ -16,6 +16,11 @@ data/evidence_attachments/
 # Local AI-assistant tooling config/instructions -- kept locally, never committed.
 CLAUDE.md
 .mcp.json
+.claude/
 .claude-flow/
 .claude-skills-log.jsonl
 scripts/log-skill-usage.sh
+
+# Timestamped evaluation runs are working artifacts -- latest_evaluation_report.json
+# is the one the API and dashboard read. Keeping every run bloats the repo.
+ml/artifacts/evaluation_report_*.json
