@@ -49,11 +49,15 @@ def seed() -> list[tuple[str, str, str]]:
     with session_scope(session_factory) as session:
         for account in DEMO_ACCOUNTS:
             existing = session.execute(select(User).where(User.username == account["username"])).scalar_one_or_none()
+            password = secrets.token_urlsafe(9)
+            
             if existing is not None:
-                print(f"{account['username']}: already exists, left untouched.")
+                password_hash, salt = auth_service.hash_password(password)
+                existing.password_hash = password_hash
+                existing.password_salt = salt
+                created.append((account["username"], password, account["role"]))
                 continue
 
-            password = secrets.token_urlsafe(9)
             auth_service.create_user(
                 session,
                 username=account["username"],
