@@ -1,3 +1,12 @@
+# CPU-only PyTorch wheels. Without this, `pip install torch` pulls the
+# default CUDA/GPU build -- several GB of nvidia_cudnn/cublas/nccl/triton
+# packages that a Render web service (no GPU) can never use. That bloat was
+# also the direct cause of a Render build failure: a huge download got
+# corrupted mid-transfer on Render's build machine and tripped pip's hash
+# check ("THESE PACKAGES DO NOT MATCH THE HASHES"). The CPU build is a
+# fraction of the size and installs faster and more reliably.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
  fastapi==0.141.1
  uvicorn[standard]==0.52.4
  pydantic==2.13.5
@@ -11,7 +20,7 @@
  scikit-learn==1.9.0
  # Used only by the comparison-only trajectory Transformer baseline
  # (ml/trajectory_transformer.py). Every live-scoring path is scikit-learn.
- torch==2.14.0
+ torch==2.14.0+cpu
  pyyaml==6.0.3
  joblib==1.6.0
  pytest==8.4.2
