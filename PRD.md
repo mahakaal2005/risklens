@@ -1,11 +1,11 @@
 # Product Requirements Document
-# ClearRisk Recover — Explainable Merchant Refund/Chargeback Loss-Risk Review MVP
+# RiskLens — Explainable Merchant Refund/Chargeback Loss-Risk Review MVP
 
 Status: Design proposal, rescoped 2026-08-22 from an earlier four-scenario "AI Risk Manager" concept. See `docs/RESCOPE_REVIEW.md` for the full rationale.
 
 ## 1. Product summary
 
-ClearRisk Recover is a local decision-support prototype for merchant refund/chargeback loss-risk review. It predicts, explains, and routes for human review — it does not decide or enforce.
+RiskLens is a local decision-support prototype for merchant refund/chargeback loss-risk review. It predicts, explains, and routes for human review — it does not decide or enforce.
 
 The product does **not** process payments, connect to Razorpay or any gateway, or take real enforcement action.
 

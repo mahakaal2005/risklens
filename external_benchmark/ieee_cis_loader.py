@@ -27,7 +27,7 @@ def _manual_download_message(path: Path) -> str:
         f"yourself, and place it at exactly: {path}\n\n"
         "This benchmark is a separate, standalone transaction-level fraud "
         "classification experiment. It is not part of, and does not affect, "
-        "ClearRisk Recover's core synthetic merchant-week refund/chargeback-loss "
+        "RiskLens's core synthetic merchant-week refund/chargeback-loss "
         "model, rules engine, API, database, or dashboard."
     )
 
@@ -56,7 +56,7 @@ def preview(df: pd.DataFrame, n_rows: int = 3) -> str:
     the caller, never printed automatically. Shows column names, dtypes,
     and the first n_rows values, which is acceptable here because this
     dataset is already a public, anonymized competition dataset (no real
-    PII), unlike ClearRisk's own synthetic-data-only restrictions."""
+    PII), unlike RiskLens's own synthetic-data-only restrictions."""
 
     lines = [f"Shape: {df.shape[0]} rows x {df.shape[1]} columns", "Dtypes:", str(df.dtypes), f"First {n_rows} rows:", str(df.head(n_rows))]
     return "\n".join(lines)

@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models for ClearRisk Recover's case workflow.
+"""SQLAlchemy ORM models for RiskLens's case workflow.
 
 No field here ever stores label_high_loss_next_30d or
 latent_state_for_demo_only -- the service layer (app/services/case_service.py)

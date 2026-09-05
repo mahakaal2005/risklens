@@ -13,7 +13,7 @@ from dashboard.components.common import render_error
 from dashboard.components.economics import render_calibration_panel, render_cost_panel
 
 PRODUCT_EXPLANATION = (
-    "ClearRisk Recover identifies synthetic merchant patterns associated with rising "
+    "RiskLens identifies synthetic merchant patterns associated with rising "
     "refund and chargeback loss. It explains the risk, guides evidence collection, "
     "keeps a human reviewer in control, and records an auditable decision trail."
 )
@@ -97,7 +97,7 @@ def _render_at_a_glance(client: ClearRiskAPIClient) -> None:
 
 def render_overview(client: ClearRiskAPIClient) -> None:
     with st.container(border=True):
-        st.title("ClearRisk Recover")
+        st.title("RiskLens")
         st.subheader("Explainable early warning for merchant refund and chargeback spikes.")
         st.write(PRODUCT_EXPLANATION)
 

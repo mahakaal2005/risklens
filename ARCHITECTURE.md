@@ -1,4 +1,4 @@
-  # Architecture — ClearRisk Recover MVP
+  # Architecture — RiskLens MVP
 
   Status: Design proposal, rescoped 2026-08-22 to a single flagship loss class (merchant refund/chargeback loss risk) evaluated at merchant-week granularity. See `docs/RESCOPE_REVIEW.md`.
 

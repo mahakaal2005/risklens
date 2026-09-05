@@ -30,7 +30,7 @@ FEATURE_LIST_PATH = Path("external_benchmark/artifacts/selected_feature_list.jso
 
 NON_CLAIM_TEXT = (
     "This external benchmark uses a public anonymized transaction-level "
-    "fraud dataset. It does not validate ClearRisk Recover's synthetic "
+    "fraud dataset. It does not validate RiskLens's synthetic "
     "merchant-week refund/chargeback-loss model, merchant evidence "
     "workflow, or any Razorpay/UPI/payment-gateway integration. This "
     "benchmark is not India-specific, not Razorpay data, not UPI data, "

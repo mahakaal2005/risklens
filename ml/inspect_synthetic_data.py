@@ -313,7 +313,7 @@ def generate_report(csv_path: Path = DEFAULT_CSV_PATH, report_path: Path = DEFAU
 
 def _render_markdown(overview, state_rates, explicit_counts, overlap_stats, overlap_summary, leakage_scan, correlations, baseline_metrics, decision, decision_reason) -> str:
     lines = []
-    lines.append("# Milestone 1 Data Quality Report — ClearRisk Recover")
+    lines.append("# Milestone 1 Data Quality Report — RiskLens")
     lines.append("")
     lines.append(f"Generated: {dt.datetime.now(dt.timezone.utc).isoformat()}")
     lines.append("")

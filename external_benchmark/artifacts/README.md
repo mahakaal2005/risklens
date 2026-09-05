@@ -10,5 +10,5 @@ merchant IDs, identity fields, or record-level predictions.
 - `selected_feature_list.json` — the exact numeric/categorical feature
   columns used, written every run.
 
-Both files are entirely separate from `ml/artifacts/` (ClearRisk's own
+Both files are entirely separate from `ml/artifacts/` (RiskLens's own
 evaluation report) and are never read by `ml/`, `app/`, or `dashboard/`.

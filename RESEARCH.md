@@ -1,4 +1,4 @@
- # Research Notes — ClearRisk Recover
+ # Research Notes — RiskLens
 
  Status: Design proposal, rescoped 2026-08-22 to a single flagship scenario (merchant
  refund/chargeback loss risk). See `docs/RESCOPE_REVIEW.md`.
@@ -43,7 +43,7 @@
 
  ## What we can safely claim
 
- ClearRisk Recover is a synthetic-data prototype for explainable merchant refund/chargeback
+ RiskLens is a synthetic-data prototype for explainable merchant refund/chargeback
  loss-risk review. It
 
  ## What still needs verification

@@ -1,4 +1,4 @@
-# Judge FAQ — ClearRisk Recover
+# Judge FAQ — RiskLens
 
 Anticipated questions, with the actual evidence and file/line so any answer here
 can be pulled up live during a demo or panel review. This is a companion to

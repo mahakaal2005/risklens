@@ -1,4 +1,4 @@
-"""Transparent rules engine for ClearRisk Recover, loaded from rules/risk_rules.yaml.
+"""Transparent rules engine for RiskLens, loaded from rules/risk_rules.yaml.
 
 Produces evidence and risk signals for human review. It never makes an
 enforcement decision, and its output recommendation is always one of the

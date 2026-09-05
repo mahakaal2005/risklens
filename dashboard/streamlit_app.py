@@ -1,4 +1,4 @@
-"""ClearRisk Recover — local Streamlit dashboard.
+"""RiskLens — local Streamlit dashboard.
 
 Local synthetic-data demonstration only. This app talks to exactly one
 local FastAPI backend (default http://127.0.0.1:8000) over plain HTTP and
@@ -25,7 +25,7 @@ from dashboard.components.evidence_form import render_merchant_response
 from dashboard.components.login import render_login
 from dashboard.components.metrics import render_overview
 
-st.set_page_config(page_title="ClearRisk Recover", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="RiskLens", page_icon="🛡️", layout="wide")
 
 PAGES = ["Overview", "Review Queue", "Case Detail", "Merchant Response", "Audit Timeline"]
 
@@ -49,7 +49,7 @@ def _render_authenticated_app(client: ClearRiskAPIClient) -> None:
         st.session_state["nav_page"] = allowed_pages[0]
 
     with st.sidebar:
-        st.title("ClearRisk Recover")
+        st.title("RiskLens")
         st.caption(f"{current_user['display_name']} · {current_user['role']}")
         default_index = allowed_pages.index(st.session_state["nav_page"])
         page = st.radio("Navigate", allowed_pages, index=default_index, key="nav_radio")

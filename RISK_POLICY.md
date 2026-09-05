@@ -1,10 +1,10 @@
-# Risk Policy — ClearRisk Recover Demonstration Policy
+# Risk Policy — RiskLens Demonstration Policy
 
 Status: Design proposal, rescoped 2026-08-22 to a single flagship scenario (merchant refund/chargeback loss risk) at merchant-week granularity. See `docs/RESCOPE_REVIEW.md`.
 
 ## Purpose
 
-This document defines illustrative, synthetic-data-only rules for ClearRisk Recover's rules engine, and the recommendation policy that combines rule triggers with the ML model's `label_high_loss_next_30d` probability.
+This document defines illustrative, synthetic-data-only rules for RiskLens's rules engine, and the recommendation policy that combines rule triggers with the ML model's `label_high_loss_next_30d` probability.
 
 ## Policy principles
 

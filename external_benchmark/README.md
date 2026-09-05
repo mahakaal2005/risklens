@@ -1,8 +1,8 @@
 # external_benchmark/
 
 A standalone, separate transaction-level fraud-classification experiment on
-the public IEEE-CIS Fraud Detection dataset. **Not part of ClearRisk
-Recover's core product** — see `docs/EXTERNAL_BENCHMARK.md` and
+the public IEEE-CIS Fraud Detection dataset. **Not part of RiskLens's
+core product** — see `docs/EXTERNAL_BENCHMARK.md` and
 `docs/EXTERNAL_BENCHMARK_DESIGN.md` for the full data boundary and
 non-claims.
 
@@ -29,7 +29,7 @@ python3 -m external_benchmark.ieee_cis_evaluate
 
 If the file is missing, this fails with a clear message stating the
 expected path, the manual-download requirement, and that this benchmark
-is separate from ClearRisk's core model — it will not fabricate a result.
+is separate from RiskLens's core model — it will not fabricate a result.
 
 ## Files
 

@@ -1,4 +1,4 @@
-"""Synthetic merchant-week data generator for ClearRisk Recover.
+"""Synthetic merchant-week data generator for RiskLens.
 
 One row = one merchant at one weekly prediction date. Predicts
 label_high_loss_next_30d: will this merchant enter a simulated elevated
@@ -421,7 +421,7 @@ def build_metadata(df: pd.DataFrame, seed: int, n_merchants: int, n_weeks: int) 
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate synthetic merchant-week data for ClearRisk Recover.")
+    parser = argparse.ArgumentParser(description="Generate synthetic merchant-week data for RiskLens.")
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument("--n-merchants", type=int, default=DEFAULT_N_MERCHANTS)
     parser.add_argument("--n-weeks", type=int, default=DEFAULT_N_WEEKS)

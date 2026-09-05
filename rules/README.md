@@ -1,6 +1,6 @@
 # rules/
 
-`risk_rules.yaml` is the configurable rule catalogue for ClearRisk Recover's transparent rules engine (`ml/rules_engine.py`). All numeric thresholds live in this YAML file, not in Python — changing a threshold means editing this file, not the code.
+`risk_rules.yaml` is the configurable rule catalogue for RiskLens's transparent rules engine (`ml/rules_engine.py`). All numeric thresholds live in this YAML file, not in Python — changing a threshold means editing this file, not the code.
 
 ## What this is
 

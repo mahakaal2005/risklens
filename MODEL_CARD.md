@@ -1,10 +1,10 @@
-# Model Card — ClearRisk Recover Baseline
+# Model Card — RiskLens Baseline
 
 Status: Design proposal, rescoped 2026-08-22. See `docs/RESCOPE_REVIEW.md`.
 
 ## Model name
 
-ClearRisk Recover Logistic Regression Baseline, plus two comparison-only baselines (Random Forest, Gradient Boosting)
+RiskLens Logistic Regression Baseline, plus two comparison-only baselines (Random Forest, Gradient Boosting)
 
 ## Version
 

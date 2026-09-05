@@ -1,4 +1,4 @@
-"""HTTP client for the local ClearRisk Recover FastAPI backend.
+"""HTTP client for the local RiskLens FastAPI backend.
 
 Local synthetic-data demonstration only. This module makes HTTP calls to
 exactly one configurable base URL (default http://127.0.0.1:8000) and

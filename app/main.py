@@ -1,4 +1,4 @@
-"""FastAPI application entrypoint for ClearRisk Recover.
+"""FastAPI application entrypoint for RiskLens.
 
 Local synthetic-data demonstration only. No authentication, no real
 payment/gateway integration, and no financial-enforcement action exists
@@ -19,7 +19,7 @@ from app.api.routes import auth, cases, evidence, health, metrics
 from app.schemas.api_responses import SYNTHETIC_DATA_NOTICE, ErrorCode
 
 app = FastAPI(
-    title="ClearRisk Recover API",
+    title="RiskLens API",
     description="Local synthetic-data demonstration only. No real payment, settlement, or enforcement action exists in this API.",
     version="0.1.0",
 )

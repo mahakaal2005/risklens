@@ -2,7 +2,7 @@
 source (Phase 2 -- see docs/PHASE_2_EXTERNAL_DATA_IMPORT_DESIGN.md).
 
 Confirmed with the user before implementation:
-- The CSV must match ClearRisk's own internal raw schema exactly (the
+- The CSV must match RiskLens's own internal raw schema exactly (the
   same columns ml/data_validation.py validates for the synthetic
   dataset, minus the two synthetic-only columns) -- no flexible
   column-name mapping in v1.

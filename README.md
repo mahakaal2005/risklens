@@ -1,10 +1,10 @@
-# ClearRisk Recover
+# RiskLens
 
-### ClearRisk Recover — Explainable Refund & Chargeback Risk Review
+### RiskLens — Explainable Refund & Chargeback Risk Review
 
 **Detect early loss. Explain the risk. Review fairly.**
 
-ClearRisk Recover helps payment-risk teams identify merchants whose refund and
+RiskLens helps payment-risk teams identify merchants whose refund and
 chargeback patterns are likely to worsen in the next 30 days. It explains why the
 merchant was flagged, recommends evidence to request, routes the case to a human
 reviewer, supports a merchant response/appeal, and tracks false positives in a
@@ -18,7 +18,7 @@ legal/compliance decisions. Not production-ready or compliance-certified.
 
 ## Razorpay Buildathon — Track 2: AI Risk Manager
 
-> ClearRisk Recover detects early merchant refund and chargeback spikes, explains the risk factors, guides evidence collection, keeps a human reviewer in control, gives merchants a path to respond, and measures false positives.
+> RiskLens detects early merchant refund and chargeback spikes, explains the risk factors, guides evidence collection, keeps a human reviewer in control, gives merchants a path to respond, and measures false positives.
 
 **The one loss class** — not a broad multi-scenario fraud platform:
 

@@ -10,7 +10,7 @@ from dashboard.api_client import ClearRiskAPIClient, DashboardAPIError
 
 
 def render_login(client: ClearRiskAPIClient) -> None:
-    st.title("ClearRisk Recover")
+    st.title("RiskLens")
     st.caption("Sign in to continue. Local demo accounts only -- see scripts/seed_demo_users.py.")
 
     with st.form("login_form"):

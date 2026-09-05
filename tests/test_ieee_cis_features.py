@@ -135,6 +135,6 @@ def test_report_contains_required_non_claim_text(tmp_path, monkeypatch):
 
     report = ieee_cis_evaluate.run_full_benchmark(dataset_path)
     non_claims = report["non_claims"]
-    assert "does not validate ClearRisk Recover" in non_claims
+    assert "does not validate RiskLens" in non_claims
     assert "not Razorpay data" in non_claims
     assert "not proof of production fraud performance" in non_claims

@@ -1,4 +1,4 @@
-"""SQLite database setup for ClearRisk Recover.
+"""SQLite database setup for RiskLens.
 
 Local-only, single-file SQLite database. There is no authentication, no
 production hardening, and no real payment/gateway connection here -- see
