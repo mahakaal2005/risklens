@@ -46,9 +46,10 @@ def get_base_url() -> str:
 
     value = os.environ.get(BASE_URL_ENV_VAR, DEFAULT_BASE_URL)
     if not value.startswith(("http://", "https://")):
-        # Render internal hostnames are bare strings (no dots) and need http + port 10000
+        # Render's `host` property gives the public subdomain prefix (e.g. risklens-api-kaj8).
+        # We need to construct the full public URL.
         if "." not in value and ":" not in value:
-            value = f"http://{value}:10000"
+            value = f"https://{value}.onrender.com"
         else:
             value = f"https://{value}"
     return value
