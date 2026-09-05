@@ -43,7 +43,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run dashboard/streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    startCommand: PYTHONPATH=. streamlit run dashboard/streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
     envVars:
       - key: CLEARRISK_API_BASE_URL
         fromService:
