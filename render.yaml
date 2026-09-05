@@ -13,8 +13,8 @@
 #   30-60s to cold-start on the next visit. The first click after idle time
 #   will look slow; that's expected, not a bug.
 # - Seeding is idempotent (scripts/seed_demo_cases.py and seed_demo_users.py
-#   both explicitly document this), so preDeployCommand re-running it on
-#   every deploy is safe and never duplicates data.
+#   both explicitly document this), so running it inline in startCommand on
+#   every deploy/restart is safe and never duplicates data.
 # - Demo login credentials are printed once, to this service's Render deploy
 #   logs, on the very first successful seed. Anyone with dashboard access to
 #   this Render project can read them there. That's fine for synthetic-data
@@ -42,7 +42,12 @@ services:
     type: web
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    # Dashboard-only requirements, deliberately not requirements.txt -- the
+    # dashboard is a pure HTTP client and never needs the API service's
+    # torch/scikit-learn/psycopg2/sqlalchemy dependencies. Combining those
+    # with Vertex AI in one shared install previously broke the API
+    # service's build with a pip "resolution-too-deep" error.
+    buildCommand: pip install -r requirements-dashboard.txt
     startCommand: PYTHONPATH=. streamlit run dashboard/streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
     envVars:
       - key: CLEARRISK_API_BASE_URL

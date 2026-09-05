@@ -1,0 +1,15 @@
+# Dashboard-service-only requirements. Installed instead of requirements.txt
+# for the risklens-dashboard Render service (see render.yaml).
+#
+# Deliberately standalone rather than `-r requirements.txt` + one extra
+# package: the dashboard is a pure HTTP client to the API service and never
+# imports sqlalchemy, scikit-learn, torch, psycopg2, pyyaml, or joblib (all
+# API-/ml-side concerns). Pulling those in unnecessarily was surface area
+# for exactly the kind of pip resolver blowup that broke the API service's
+# build when google-cloud-aiplatform was added to the one shared file --
+# see requirements.txt's note. Keep this file's package list in sync with
+# what dashboard/*.py and dashboard/components/*.py actually import.
+streamlit==1.63.0
+pandas==2.3.3
+httpx==0.28.1
+google-cloud-aiplatform==1.82.0

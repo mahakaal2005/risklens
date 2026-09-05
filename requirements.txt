@@ -16,7 +16,14 @@
  joblib==1.6.0
  pytest==8.4.2
  httpx==0.28.1
-# Optional: powers case_detail.py's Vertex AI (Gemini) evidence-analysis
-# call. Only exercised when GCP_PROJECT_ID/GCP_CREDENTIALS_JSON are set;
-# the dashboard runs fine without it (labeled illustrative fallback).
-google-cloud-aiplatform==1.82.0
+
+# NOTE: google-cloud-aiplatform (Vertex AI, for the dashboard's optional
+# Gemini evidence-analysis call) is intentionally NOT listed here. It pulls
+# in a large, loosely-versioned transitive dependency tree that makes pip's
+# resolver extremely slow -- and it's only used by
+# dashboard/components/case_detail.py, never by the API service. Installing
+# it unconditionally in this shared file previously broke the API service's
+# build entirely (pip: "resolution-too-deep" after 15+ minutes of
+# backtracking). See requirements-dashboard.txt, which layers it on top of
+# this file for the dashboard service only -- the API service installs just
+# this file and never needs it.
