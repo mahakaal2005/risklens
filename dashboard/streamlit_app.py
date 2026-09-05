@@ -45,15 +45,13 @@ def _render_authenticated_app(client: ClearRiskAPIClient) -> None:
     current_user = st.session_state["current_user"]
     allowed_pages = PAGES_BY_ROLE.get(current_user["role"], PAGES)
 
-    if "nav_page" not in st.session_state or st.session_state["nav_page"] not in allowed_pages:
-        st.session_state["nav_page"] = allowed_pages[0]
+    if "nav_radio" not in st.session_state or st.session_state["nav_radio"] not in allowed_pages:
+        st.session_state["nav_radio"] = allowed_pages[0]
 
     with st.sidebar:
         st.title("RiskLens")
         st.caption(f"{current_user['display_name']} · {current_user['role']}")
-        default_index = allowed_pages.index(st.session_state["nav_page"])
-        page = st.radio("Navigate", allowed_pages, index=default_index, key="nav_radio")
-        st.session_state["nav_page"] = page
+        st.radio("Navigate", allowed_pages, key="nav_radio")
 
         active_case = st.session_state.get("selected_case_id")
         if active_case:
@@ -75,7 +73,7 @@ def _render_authenticated_app(client: ClearRiskAPIClient) -> None:
 
     render_page_notice()
 
-    page = st.session_state["nav_page"]
+    page = st.session_state["nav_radio"]
     if page == "Overview":
         render_overview(client)
     elif page == "Review Queue":

@@ -112,5 +112,5 @@ def render_review_queue(client: ClearRiskAPIClient) -> None:
     )
     if st.button("Open case detail", type="primary"):
         st.session_state["selected_case_id"] = picked["case_id"]
-        st.session_state["nav_page"] = "Case Detail"
+        st.session_state["nav_radio"] = "Case Detail"
         st.rerun()
