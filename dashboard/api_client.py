@@ -39,7 +39,16 @@ class ReviewActionResult:
 
 
 def get_base_url() -> str:
-    return os.environ.get(BASE_URL_ENV_VAR, DEFAULT_BASE_URL)
+    """Read the configured backend base URL. Accepts a bare hostname (no
+    scheme) and assumes https:// in that case, so Render's `fromService`
+    `host` property -- which returns a hostname only -- can be used directly
+    without a separate scheme-prefixing step in render.yaml."""
+
+    value = os.environ.get(BASE_URL_ENV_VAR, DEFAULT_BASE_URL)
+    if not value.startswith(("http://", "https://")):
+        scheme = "https://"
+        value = scheme + value
+    return value
 
 
 class ClearRiskAPIClient:

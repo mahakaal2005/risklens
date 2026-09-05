@@ -1,0 +1,53 @@
+# Render Blueprint for RiskLens -- optional public demo deployment.
+#
+# Not required for the Razorpay Buildathon submission (a public GitHub repo
+# and pitch video are the actual requirements). This exists purely so
+# reviewers/friends/recruiters can click through the live UI without running
+# anything locally.
+#
+# Free-tier caveats, spelled out rather than discovered the hard way:
+# - Render's free Postgres databases expire after a fixed window (historically
+#   ~30-90 days) and are not meant for anything long-lived -- fine for a
+#   buildathon demo, not a permanent home for this data.
+# - Free web services spin down after ~15 minutes of inactivity and take
+#   30-60s to cold-start on the next visit. The first click after idle time
+#   will look slow; that's expected, not a bug.
+# - Seeding is idempotent (scripts/seed_demo_cases.py and seed_demo_users.py
+#   both explicitly document this), so preDeployCommand re-running it on
+#   every deploy is safe and never duplicates data.
+# - Demo login credentials are printed once, to this service's Render deploy
+#   logs, on the very first successful seed. Anyone with dashboard access to
+#   this Render project can read them there. That's fine for synthetic-data
+#   demo accounts, but don't reuse these passwords anywhere real.
+
+databases:
+  - name: risklens-db
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  - name: risklens-api
+    type: web
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: python scripts/seed_demo_cases.py && python scripts/seed_demo_users.py
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: risklens-db
+          property: connectionString
+
+  - name: risklens-dashboard
+    type: web
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run dashboard/streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+    envVars:
+      - key: CLEARRISK_API_BASE_URL
+        fromService:
+          name: risklens-api
+          type: web
+          property: host
