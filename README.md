@@ -41,6 +41,7 @@ legal/compliance decisions. Not production-ready or compliance-certified.
 - **"Is the probability honest, not just well-ranked?"** Every model is calibration-tested (`ml/calibration.py`): Brier score, expected and maximum calibration error, and a reliability curve, with Platt and isotonic calibrators fit on validation and scored on held-out test. This caught that **Random Forest states roughly double the true risk** (mean predicted 0.288 vs. a 0.145 base rate) — which retroactively explains why its selected threshold was 0.55 when every other model chose 0.10–0.15. It also found that post-hoc calibration *worsens* the Trajectory Transformer's worst-bin error, so "just apply isotonic" is reported as the wrong answer where it is. See `MODEL_CARD.md`.
 - **"Show the cost, not just the score."** Every method is also costed in rupees (`rules/cost_model.yaml`, `ml/cost_model.py`), against two baselines: reviewing nobody and reviewing everybody. Two findings the accuracy table hides — the **rules-only baseline does not beat reviewing everybody** (₹29.3M vs ₹22.4M, it adds negative value against that baseline), and the best model beats review-everything by only **~12%**, because the assumed 72:1 miss-to-review cost ratio makes over-flagging nearly free. **Every rupee figure is a labelled assumption, not a measured cost**, so a sensitivity table reports how the recommended threshold moves across cost ratios from 10:1 to 500:1 — letting a reader locate their own ratio instead of inheriting ours. See `MODEL_CARD.md`.
 - **The label is not circular.** `label_high_loss_next_30d` is generated from a 5-state hidden latent-merchant simulation (Stable, Seasonal/legitimate high-return, Operational fulfilment failure, High-risk, Early hidden-risk), not as a threshold function of the same fields the rules engine checks.
+- **The model doesn't get the final word over domain policy.** `support_ticket_rate`'s fitted Logistic Regression coefficient is negative — higher support-ticket load slightly *lowers* the predicted score — which contradicts `RISK_POLICY.md`'s documented rule that rising support load is a risk-increasing signal. Rather than trust the learned direction or silently drop the feature, it stays in the model (still fit and scored on) but is excluded from every analyst- and merchant-facing explanation (`ml/explain_cases.py::DIAGNOSTIC_ONLY_FEATURES`) until its direction passes a stability check. A concrete example of deterministic domain judgment overriding a raw model output instead of either blindly trusting it or hiding the disagreement. See `MODEL_CARD.md`.
 - **"Strictly defense-only: anything offense-capable is disqualified."** The policy engine can only ever return a recommendation (`APPROVE`, `ALLOW_WITH_MONITORING`, `REQUEST_EVIDENCE`, `MANUAL_REVIEW_REQUIRED`, `ESCALATE_TO_COMPLIANCE`) — never an automated freeze, hold, ban, termination, or payment rejection. Every high-impact action requires a human reviewer.
 - **Fair to the merchant, not just accurate.** The flagged merchant sees a safe, plain-language explanation with concrete before/after trend values, an evidence checklist, and a genuine appeal path — not just a score.
 
@@ -64,6 +65,7 @@ pip install -r requirements.txt
 python3 -m ml.generate_synthetic_data     # writes demo_data/synthetic_merchant_week_data.csv
 python3 -m ml.train_baseline_model        # Logistic Regression -- the model used for live case scoring
 python3 -m ml.train_tree_models           # Random Forest + Gradient Boosting -- comparison baselines only
+python3 -m ml.train_trajectory_transformer # Trajectory Transformer -- comparison-only sequence-model baseline
 python3 -m ml.evaluate_model              # writes ml/artifacts/latest_evaluation_report.json
 
 # 2. Generate the 5 demo case packets and seed the local database
@@ -146,6 +148,7 @@ Python, FastAPI, Streamlit, SQLite, Pandas, scikit-learn, PyYAML, Joblib.
 - `SECURITY.md` — MVP security boundaries
 - `RESEARCH.md` — evidence, assumptions, and open questions
 - `JUDGE_FAQ.md` — anticipated questions with cited evidence and file/line references
+- `FAILURE_RECOVERY.md` — two real measurement bugs found and fixed, with before/after numbers
 
 ## Status
 

@@ -2,7 +2,7 @@
   "model_name": "Trajectory Transformer",
   "model_version": "0.1.0",
   "seed": 42,
-  "generated_at": "2026-09-03T20:15:16.357068+00:00",
+  "generated_at": "2026-09-05T11:51:30.408723+00:00",
   "feature_columns": [
     "refund_rate_change",
     "chargeback_rate_change",
