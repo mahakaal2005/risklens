@@ -81,21 +81,50 @@ def test_dashboard_includes_synthetic_data_notice():
 
 
 def test_no_external_image_cdn_font_or_llm_urls():
+    """Every remote URL literal in dashboard source must be one of: the
+    local API default, a Render deployment hostname (the dashboard's one
+    legitimate cross-service call, see dashboard/api_client.py), or the
+    reserved-for-documentation example.org domain used by the illustrative,
+    never-sent webhook display in reviewer_actions.py. A real external
+    domain (e.g. an actual payment gateway or CDN) appearing here should
+    fail this test, not be added to an exception list."""
     source = _all_dashboard_source().lower()
     for marker in EXTERNAL_URL_MARKERS:
         assert marker not in source, f"External resource marker {marker!r} found in dashboard source"
-    # No remote http(s) URL should appear anywhere except the local API default, Render, or Razorpay webhook simulation.
+
     import re
 
     urls = re.findall(r"https?://[^\s\"'`]+", _all_dashboard_source())
     for url in urls:
         assert (
-            url.startswith("http://127.0.0.1") 
-            or url.startswith("http://localhost") 
+            url.startswith("http://127.0.0.1")
+            or url.startswith("http://localhost")
             or "onrender.com" in url
-            or "api.razorpay.com" in url
-            or "{value}" in url
+            or "example.org" in url
         ), f"Unexpected remote URL in dashboard source: {url}"
+
+
+def test_simulated_webhook_never_targets_a_real_domain():
+    """reviewer_actions.py shows an illustrative webhook payload after a
+    reviewer action. This asserts it can never reference a real payment
+    domain (only the RFC 2606 reserved example.org), and that the earlier
+    fabricated "successfully recorded and synced" success claim is gone --
+    the display must be honestly labeled as simulated, not presented as a
+    real integration event."""
+    source = (DASHBOARD_DIR / "components" / "reviewer_actions.py").read_text()
+    assert "razorpay.com" not in source.lower()
+    assert "successfully recorded and synced" not in source.lower()
+    assert "simulated" in source.lower() or "illustrative" in source.lower()
+
+
+def test_vertex_ai_call_has_a_labeled_fallback():
+    """case_detail.py's optional Gemini call must never present fallback
+    text as if it were a live model response -- the reviewer must always
+    be able to tell which one they're looking at."""
+    source = (DASHBOARD_DIR / "components" / "case_detail.py").read_text()
+    assert "fallback_reason" in source
+    assert "illustrative example" in source.lower()
+    assert "live vertex ai" in source.lower() or "live gemini" in source.lower()
 
 
 def test_reviewer_action_ui_only_lists_approved_action_values():
@@ -129,8 +158,15 @@ def test_dashboard_has_exactly_five_pages():
 
 
 @pytest.mark.parametrize("filename", [f.name for f in DASHBOARD_PY_FILES])
-def test_no_llm_or_agent_imports(filename):
+def test_no_undisclosed_llm_or_agent_imports(filename):
+    """The one deliberate, disclosed exception is case_detail.py's Vertex
+    AI (Gemini) evidence-analysis call -- see its module-level comment and
+    dashboard/streamlit_app.py's docstring. Every other file, and every
+    other LLM/agent provider, must stay completely clean."""
     path = next(f for f in DASHBOARD_PY_FILES if f.name == filename)
     source = path.read_text().lower()
     for forbidden_import in ["import openai", "import anthropic", "langchain", "import agent"]:
         assert forbidden_import not in source, f"{filename} contains forbidden import: {forbidden_import}"
+    if filename != "case_detail.py":
+        for forbidden_import in ["import vertexai", "import google.generativeai", "from vertexai"]:
+            assert forbidden_import not in source, f"{filename} contains forbidden import: {forbidden_import}"

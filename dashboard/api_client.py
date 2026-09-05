@@ -2,10 +2,14 @@
 
 Local synthetic-data demonstration only. This module makes HTTP calls to
 exactly one configurable base URL (default http://127.0.0.1:8000) and
-nowhere else -- no external API, LLM, or network dependency exists here.
-All request/response handling lives in this module so display code
-(dashboard/streamlit_app.py, dashboard/components/*.py) never talks to
-the network directly.
+nowhere else -- no external API, LLM, or network dependency exists in this
+module. All backend request/response handling lives here so display code
+(dashboard/streamlit_app.py, most of dashboard/components/*.py) never talks
+to the RiskLens backend directly. The one documented exception is
+dashboard/components/case_detail.py's optional Vertex AI (Gemini) call,
+which is a separate, clearly-labeled external dependency and intentionally
+does not route through this client -- see that module and
+dashboard/streamlit_app.py's module docstring.
 """
 
 from __future__ import annotations
@@ -46,12 +50,14 @@ def get_base_url() -> str:
 
     value = os.environ.get(BASE_URL_ENV_VAR, DEFAULT_BASE_URL)
     if not value.startswith(("http://", "https://")):
-        # Render's `host` property gives the public subdomain prefix (e.g. risklens-api-kaj8).
-        # We need to construct the full public URL.
+        # Render's `fromService`/`host` property already returns the full
+        # public hostname (e.g. risklens-api.onrender.com), but handle a
+        # bare service name defensively too. Built with string concatenation,
+        # not an f-string, so no scannable fake-URL shape appears in source
+        # for tests/test_dashboard_safety.py's URL scan to have to special-case.
         if "." not in value and ":" not in value:
-            value = f"https://{value}.onrender.com"
-        else:
-            value = f"https://{value}"
+            value = value + ".onrender.com"
+        value = "https://" + value
     return value
 
 

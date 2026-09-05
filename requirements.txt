@@ -16,5 +16,7 @@
  joblib==1.6.0
  pytest==8.4.2
  httpx==0.28.1
+# Optional: powers case_detail.py's Vertex AI (Gemini) evidence-analysis
+# call. Only exercised when GCP_PROJECT_ID/GCP_CREDENTIALS_JSON are set;
+# the dashboard runs fine without it (labeled illustrative fallback).
 google-cloud-aiplatform==1.82.0
-google-generativeai==0.8.4

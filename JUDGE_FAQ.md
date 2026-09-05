@@ -127,3 +127,36 @@ fails the build if any endpoint or response could contain them. Separately,
 `app/services/audit_service.py` refuses to persist any audit payload
 containing those enforcement terms outright (`SECURITY.md`, "Sanitised audit
 payloads") — the write is rejected, not silently stripped.
+
+---
+
+**Q: Does the dashboard actually call Razorpay or an external AI service, or
+is that just for show?**
+
+Both exist, and both are handled the same honest way: real when configured,
+clearly labeled otherwise, never faked as something they're not.
+
+- **The "webhook dispatched" text after a reviewer action is 100% static
+  display text.** No network request is ever made. The example target
+  domain is `webhooks.example.org` — reserved by RFC 2606 for documentation,
+  guaranteed to never resolve to a real service — and the UI explicitly
+  labels it "🎭 Simulated for demonstration only." Enforced by
+  `tests/test_dashboard_safety.py::test_simulated_webhook_never_targets_a_real_domain`,
+  which fails the build if a real domain, or the earlier "successfully
+  recorded and synced" success-claiming language, ever reappears.
+- **The evidence-analysis panel can make a real call to Vertex AI (Gemini
+  1.5 Flash)**, only when `GCP_PROJECT_ID` and `GCP_CREDENTIALS_JSON` are
+  configured — neither is required to run the dashboard, and neither is
+  committed to this repository. If the credentials are absent or the live
+  call fails for any reason, the page shows a visibly labeled illustrative
+  example (`⚠️ Illustrative example only`) instead of silently passing off
+  canned text as a real model response, and the real failure reason is
+  logged server-side rather than swallowed. Enforced by
+  `tests/test_dashboard_safety.py::test_vertex_ai_call_has_a_labeled_fallback`.
+  See `SECURITY.md`'s "Optional external dependency: Vertex AI evidence
+  analysis" section for the full credential-handling discussion.
+
+Neither of these is a Razorpay integration or a production AI pipeline —
+they're demonstration features built to the same standard as everything
+else here: say plainly what's real, what's illustrative, and never blur
+the two.

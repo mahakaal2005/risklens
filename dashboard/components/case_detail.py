@@ -107,8 +107,11 @@ def _render_evidence_checklist(case: dict) -> None:
         st.markdown(f"- {item}")
 
 
+import logging
 import os
-import google.generativeai as genai
+
+_logger = logging.getLogger(__name__)
+
 
 def _render_submitted_evidence(client: ClearRiskAPIClient, case: dict) -> None:
     submissions = case.get("evidence_submissions") or []
@@ -148,57 +151,69 @@ def _render_submitted_evidence(client: ClearRiskAPIClient, case: dict) -> None:
             else:
                 st.caption("No file attachments for this submission.")
 
-        # --- NEW HACKATHON GENAI WOW FACTOR ---
+        # Optional AI-assisted evidence summary. Calls Vertex AI (Gemini)
+        # only when GCP_PROJECT_ID and GCP_CREDENTIALS_JSON are configured;
+        # otherwise shows a clearly-labeled illustrative example so a
+        # reviewer can never mistake canned text for a real model response.
+        # This is the one genuine external network dependency in this
+        # dashboard -- see dashboard/streamlit_app.py's module docstring.
         st.markdown("### ✨ AI Evidence Analysis")
         with st.spinner("Analyzing merchant evidence using Vertex AI (Gemini 1.5 Flash)..."):
+            ai_text = None
+            fallback_reason = None
             try:
-                # Use Vertex AI as requested for GCP credits
                 import json
+
                 import vertexai
-                from vertexai.generative_models import GenerativeModel
                 from google.oauth2 import service_account
+                from vertexai.generative_models import GenerativeModel
 
                 gcp_project = os.environ.get("GCP_PROJECT_ID")
                 gcp_creds_json = os.environ.get("GCP_CREDENTIALS_JSON")
-                
-                if gcp_project and gcp_creds_json:
+
+                if not (gcp_project and gcp_creds_json):
+                    fallback_reason = "GCP_PROJECT_ID / GCP_CREDENTIALS_JSON not configured"
+                else:
                     creds_dict = json.loads(gcp_creds_json)
                     credentials = service_account.Credentials.from_service_account_info(creds_dict)
-                    
-                    # Initialize Vertex AI
+
                     vertexai.init(project=gcp_project, location="us-central1", credentials=credentials)
                     model = GenerativeModel("gemini-1.5-flash-001")
-                    
-                    # Construct a prompt based on the case data
+
                     evidence_text = ", ".join(references) if references else "No written evidence provided."
                     prompt = f"""
                     Analyze this merchant's submitted evidence for a risk review.
                     Case details: Merchant ID {case.get('merchant_id')}, Risk Signal: {case.get('risk_signal_intensity')}.
                     Triggered rules: {case.get('triggered_rules')}.
                     Merchant's submitted explanation/evidence: "{evidence_text}".
-                    
+
                     Provide a highly concise, 3-sentence risk assessment for a human analyst.
                     Format your response with these exact bold headings:
                     **Summary:** (1 sentence)
                     **Risk Sentiment:** (Low/Medium/High, 1 sentence)
                     **Recommendation:** (1 sentence)
                     """
-                    
+
                     response = model.generate_content(prompt)
                     ai_text = response.text
-                else:
-                    raise ValueError("Vertex AI credentials not fully provided in environment")
+            except Exception as exc:
+                # Logged, not swallowed -- a reviewer sees the fallback
+                # label below, and the real cause is still visible in
+                # server logs for debugging (never a raw traceback in the UI).
+                _logger.warning("Vertex AI evidence analysis failed, using fallback example: %s", exc)
+                fallback_reason = f"live call failed ({type(exc).__name__})"
 
-            except Exception as e:
-                # Fallback mock so the demo never fails
-                ai_text = (
+            if ai_text is not None:
+                st.caption("✨ Live Vertex AI (Gemini 1.5 Flash) response.")
+                st.info(ai_text)
+            else:
+                st.caption(f"⚠️ Illustrative example only -- {fallback_reason}. This is not a real model response.")
+                st.info(
                     "**Summary:** The merchant's explanation strongly correlates with the timeframe of the observed risk spike. "
                     "The provided shipping context matches known logistical delays for this region.\n\n"
                     "**Risk Sentiment:** **Low**. The evidence appears credible and adequately explains the temporary increase in refund rates.\n\n"
                     "**Recommendation:** Accept the provided evidence and resolve the case as a False Positive."
                 )
-
-            st.info(ai_text)
 
 
 

@@ -42,12 +42,19 @@ ACTIONS_BY_STATUS = {
 def render_reviewer_actions(client: ClearRiskAPIClient, case: dict) -> None:
     st.markdown("### Reviewer actions")
 
-    # --- NEW HACKATHON WEBHOOK WOW FACTOR ---
+    # Illustrative-only: shows the shape of a webhook payload a real gateway
+    # integration might emit for this action. No network call is made here
+    # or anywhere in this dashboard -- see docs/RAZORPAY_ADAPTER.md and
+    # ml/razorpay_adapter.py for the (also non-live) fixture-based adapter.
+    # The target host below is deliberately example.org (RFC 2606 reserved
+    # for documentation) so this can never be mistaken for, or accidentally
+    # resolve to, a real endpoint.
     webhook = st.session_state.pop("webhook_fired", None)
     if webhook:
-        st.success(f"Action '{webhook['action']}' successfully recorded and synced.")
+        st.info(f"Action '{webhook['action']}' recorded. Below is an illustrative example of a webhook payload a real integration might emit -- this is a static example, not a network call.")
+        st.caption("🎭 Simulated for demonstration only -- no request is sent anywhere.")
         st.code(f"""
-Webhook dispatched: POST https://api.razorpay.com/v1/merchants/{webhook['merchant_id']}/status
+Example webhook shape (not sent): POST https://webhooks.example.org/merchants/{webhook['merchant_id']}/status
 Payload: {{
     "event": "risk.review.action",
     "merchant_id": "{webhook['merchant_id']}",

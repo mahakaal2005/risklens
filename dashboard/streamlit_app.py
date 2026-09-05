@@ -1,9 +1,17 @@
 """RiskLens — local Streamlit dashboard.
 
-Local synthetic-data demonstration only. This app talks to exactly one
-local FastAPI backend (default http://127.0.0.1:8000) over plain HTTP and
-nowhere else -- no external API, LLM, CDN asset, or network dependency
-exists anywhere in this dashboard. Run with:
+Local synthetic-data demonstration only. This app talks to its configured
+FastAPI backend (default http://127.0.0.1:8000, or a deployed instance via
+CLEARRISK_API_BASE_URL) and, optionally, one clearly-labeled external AI
+call: dashboard/components/case_detail.py can call Vertex AI (Gemini) to
+summarize submitted evidence when GCP_PROJECT_ID and GCP_CREDENTIALS_JSON
+are configured. When they are not, or the call fails, the page shows a
+visibly-labeled illustrative example instead of silently pretending it is
+live output -- see that module for the exact fallback behavior. No other
+external API, CDN asset, or network dependency exists anywhere in this
+dashboard, and the simulated webhook payload shown after a reviewer action
+(dashboard/components/reviewer_actions.py) is static display text only --
+no request is ever sent for it. Run with:
 
     streamlit run dashboard/streamlit_app.py
 

@@ -112,6 +112,44 @@
    plain HTTP on localhost, where HSTS would be meaningless rather than
    protective.
 
+ ## Optional external dependency: Vertex AI evidence analysis
+
+ `dashboard/components/case_detail.py` can optionally call Google Vertex AI
+ (Gemini 1.5 Flash) to summarize a merchant's submitted evidence for a
+ reviewer. This is the one genuine external network dependency in the
+ dashboard, and it is deliberately narrow and fail-safe:
+
+ - **Off by default.** The call only fires when both `GCP_PROJECT_ID` and
+   `GCP_CREDENTIALS_JSON` are set in the environment. Neither is required to
+   run the dashboard, and neither is committed anywhere in this repository.
+ - **Never presented as more than it is.** If the credentials are absent, or
+   the live call fails for any reason (bad credentials, quota, network),
+   the page shows a visibly labeled illustrative example instead --
+   `st.caption("⚠️ Illustrative example only -- ...")` -- never silently
+   substituted for real output. The two states are never visually
+   indistinguishable to a reviewer; see
+   `tests/test_dashboard_safety.py::test_vertex_ai_call_has_a_labeled_fallback`.
+ - **Failures are logged, not swallowed.** The real exception is written to
+   the server-side log (`_logger.warning(...)`) even when the UI shows only
+   the safe fallback message -- so a real credential/quota problem is
+   debuggable, not invisible.
+ - **Credential handling:** `GCP_CREDENTIALS_JSON` is a full GCP service
+   account key. Treat it exactly like any other production secret -- set it
+   only as a platform environment variable (e.g. a Render env var), never in
+   `.env`, never committed, and scope the service account to the minimum
+   Vertex AI permission needed. If you deploy this dashboard publicly with
+   this feature enabled, that key is live infrastructure credential
+   material, not demo data, even though everything it summarizes is
+   synthetic.
+
+ Separately, `dashboard/components/reviewer_actions.py` displays an
+ illustrative example of a webhook payload after a reviewer action. This is
+ static display text only -- no network request is ever made for it, the
+ example target is `webhooks.example.org` (RFC 2606, reserved for
+ documentation and guaranteed never to resolve to a real service), and the
+ UI explicitly labels it "🎭 Simulated for demonstration only." See
+ `tests/test_dashboard_safety.py::test_simulated_webhook_never_targets_a_real_domain`.
+
  ## Not implemented
  - Production-grade authentication hardening (MFA, password reset,
    distributed/production-grade rate limiting, external identity provider --
