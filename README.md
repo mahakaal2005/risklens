@@ -73,7 +73,7 @@ python3 scripts/seed_demo_cases.py
 python3 scripts/seed_demo_users.py        # prints local-demo login credentials once
 
 # 3. Run the test suite
-python3 -m pytest tests/ -v               # 483 tests
+python3 -m pytest tests/ -v               # 548 tests
 ```
 
 ### Running the API
@@ -145,6 +145,7 @@ Python, FastAPI, Streamlit, SQLite, Pandas, scikit-learn, PyYAML, Joblib.
 - `MODEL_CARD.md` — model scope, held-out evaluation, comparison baselines, scenario-difficulty breakdown, and limitations
 - `SECURITY.md` — MVP security boundaries
 - `RESEARCH.md` — evidence, assumptions, and open questions
+- `JUDGE_FAQ.md` — anticipated questions with cited evidence and file/line references
 
 ## Status
 
@@ -155,7 +156,8 @@ audit log, FastAPI read/workflow layer, persisted `/metrics` evaluation
 report, Streamlit dashboard) plus Phase 2 (local-demo authentication with 3
 roles, real evidence-attachment upload/download, computed review SLA,
 manually-triggered feedback retraining, anonymized merchant-week CSV import)
-are implemented, running, and covered by 483 passing tests. Random Forest and
+are implemented, running, and covered by 548 passing tests (verified 2026-09-05).
+Random Forest and
 Gradient Boosting comparison baselines, a scaled-up (900 merchants x 104
 weeks) and noise-injected synthetic dataset, and a per-scenario difficulty
 breakdown were added most recently — see `MODEL_CARD.md`.
@@ -164,3 +166,41 @@ Not production-grade auth (no MFA/password reset/rate limiting/external
 identity provider), no malware scanning on uploads, no real email/SMS/webhook
 notifications, no automatic retraining, no real gateway integration — see
 `SECURITY.md` for the full boundary list.
+
+## Path to production
+
+The event-normalization/aggregation logic (`ml/razorpay_adapter.py`) is
+structured to accept real Razorpay webhook events in place of local JSON
+fixtures — `aggregate_to_merchant_weeks()` and the rest of the pipeline
+downstream of it (rules engine, model scoring, case workflow, dashboard)
+operate on merchant-week rows regardless of where those rows came from. But
+"connect the real API" is closer to "build a data pipeline and a
+label-collection process" than a configuration change. Three things are
+genuinely unbuilt, not just unconfigured:
+
+- **Webhook authentication.** No signature verification, OAuth, or API-key
+  handling exists. `load_fixture_events()` currently only reads local files;
+  a production adapter needs real webhook signature verification before
+  trusting any inbound event.
+- **A second data source for six merchant-week fields.** Razorpay payment
+  events can supply transaction/refund/dispute counts, but they cannot supply
+  `merchant_category`, `merchant_age_days`, `delivery_evidence_coverage`,
+  `support_ticket_rate`, `average_support_resolution_time_hours`, or
+  `previous_review_outcome` (see `UNAVAILABLE_MERCHANT_WEEK_FIELDS` in
+  `ml/razorpay_adapter.py`) — those need a merchant-onboarding system and a
+  support/CRM data source.
+- **A real outcome label.** `label_high_loss_next_30d` is currently produced
+  exclusively by the synthetic latent-state simulation
+  (`ml/generate_synthetic_data.py`). Razorpay's event stream cannot supply
+  "did this merchant actually enter an elevated-loss state" — that requires
+  defining a real-world outcome definition and backfilling enough labeled
+  history before any retraining on real data would be trustworthy. Plugging
+  real events into the currently-trained model without this step would mean
+  scoring real merchants with a model validated only on synthetic labels —
+  which this project's own honesty standard (see `MODEL_CARD.md`) would treat
+  as an untested claim, not a working integration.
+
+Every metric in this README and `MODEL_CARD.md` — precision, recall,
+calibration, cost — describes performance on synthetic data only, and would
+need to be re-measured from scratch after a real integration and real
+retraining, not assumed to carry over.

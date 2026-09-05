@@ -1,7 +1,7 @@
 {
   "model_version": "0.1.0",
   "seed": 42,
-  "generated_at": "2026-08-28T16:51:37.717817+00:00",
+  "generated_at": "2026-09-05T09:47:20.011615+00:00",
   "feature_columns": [
     "refund_rate_change",
     "chargeback_rate_change",
