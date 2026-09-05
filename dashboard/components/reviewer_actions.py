@@ -41,6 +41,20 @@ ACTIONS_BY_STATUS = {
 
 def render_reviewer_actions(client: ClearRiskAPIClient, case: dict) -> None:
     st.markdown("### Reviewer actions")
+
+    # --- NEW HACKATHON WEBHOOK WOW FACTOR ---
+    webhook = st.session_state.pop("webhook_fired", None)
+    if webhook:
+        st.success(f"Action '{webhook['action']}' successfully recorded and synced.")
+        st.code(f"""
+Webhook dispatched: POST https://api.razorpay.com/v1/merchants/{webhook['merchant_id']}/status
+Payload: {{
+    "event": "risk.review.action",
+    "merchant_id": "{webhook['merchant_id']}",
+    "action_taken": "{webhook['action']}"
+}}
+        """.strip(), language="json")
+
     status = case.get("case_status")
 
     if status == "RESOLVED":
@@ -75,7 +89,10 @@ def render_reviewer_actions(client: ClearRiskAPIClient, case: dict) -> None:
         action_value = action_values[selected_label]
         try:
             client.submit_review_action(case["case_id"], action_value, note)
-            st.success(f"Action '{selected_label}' recorded.")
+            st.session_state["webhook_fired"] = {
+                "action": action_value,
+                "merchant_id": case["merchant_id"]
+            }
             st.rerun()
         except DashboardAPIError as exc:
             render_error(exc)

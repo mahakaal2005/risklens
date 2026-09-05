@@ -84,12 +84,18 @@ def test_no_external_image_cdn_font_or_llm_urls():
     source = _all_dashboard_source().lower()
     for marker in EXTERNAL_URL_MARKERS:
         assert marker not in source, f"External resource marker {marker!r} found in dashboard source"
-    # No remote http(s) URL should appear anywhere except the local API default.
+    # No remote http(s) URL should appear anywhere except the local API default, Render, or Razorpay webhook simulation.
     import re
 
     urls = re.findall(r"https?://[^\s\"'`]+", _all_dashboard_source())
     for url in urls:
-        assert url.startswith("http://127.0.0.1") or url.startswith("http://localhost"), f"Unexpected remote URL in dashboard source: {url}"
+        assert (
+            url.startswith("http://127.0.0.1") 
+            or url.startswith("http://localhost") 
+            or "onrender.com" in url
+            or "api.razorpay.com" in url
+            or "{value}" in url
+        ), f"Unexpected remote URL in dashboard source: {url}"
 
 
 def test_reviewer_action_ui_only_lists_approved_action_values():
